@@ -22,8 +22,7 @@ class RustReservedWordSymbolProvider(private val base: RustSymbolProvider) : Wra
         ReservedWordSymbolProvider.builder().symbolProvider(base).memberReservedWords(RustReservedWords).build()
 
     override fun toMemberName(shape: MemberShape): String {
-        val baseName = internal.toMemberName(shape)
-        return when (baseName) {
+        return when (val baseName = internal.toMemberName(shape)) {
             "build" -> "build_value"
             else -> baseName
         }

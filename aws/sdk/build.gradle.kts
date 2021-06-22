@@ -59,7 +59,8 @@ data class AwsService(
 
 val awsServices: Provider<List<AwsService>> = project.providers.provider { discoverServices() }
 
-val generateOnly: Set<String>? = setOf("codebuild")// null // setOf("acm", "acmpca", "autoscaling", "elasticsearchservice", "location", "mediaconvert")
+val generateOnly: Set<String>? =
+    null // setOf("codebuild")// null // setOf("acm", "acmpca", "autoscaling", "elasticsearchservice", "location", "mediaconvert")
 
 
 /**
@@ -210,8 +211,10 @@ tasks.register<Copy>("relocateRuntime") {
 }
 
 fun generateCargoWorkspace(services: List<AwsService>): String {
-    val examples = projectDir.resolve("examples").listFiles { file -> !file.name.startsWith(".") }?.toList()
-        ?.map { "examples/${it.name}" }.orEmpty()
+    val examples = projectDir.resolve("examples")
+        .listFiles { file -> !file.name.startsWith(".") }.orEmpty().toList()
+        .filter { generateOnly == null || generateOnly.contains(it.name) }
+        .map { "examples/${it.name}" }
 
     val modules = services.map(AwsService::module) + runtimeModules + awsModules + examples.toList()
     return """
