@@ -54,6 +54,7 @@ class UnionGenerator(
                 rustBlock("pub fn as_$funcNamePart(&self) -> Result<&#T, &Self>", memberSymbol) {
                     rust("if let ${unionSymbol.name}::$variantName(val) = &self { Ok(&val) } else { Err(&self) }")
                 }
+
                 rustBlock("pub fn is_$funcNamePart(&self) -> bool") {
                     rust("self.as_$funcNamePart().is_ok()")
                 }
