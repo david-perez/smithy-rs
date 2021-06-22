@@ -59,8 +59,17 @@ data class AwsService(
 
 val awsServices: Provider<List<AwsService>> = project.providers.provider { discoverServices() }
 
-val generateOnly: Set<String>? =
-    null // setOf("codebuild")// null // setOf("acm", "acmpca", "autoscaling", "elasticsearchservice", "location", "mediaconvert")
+val generateOnly: Set<String>? = null // setOf("acm", "acmpca", "autoscaling", "elasticsearchservice", "location", "mediaconvert")
+val dontGenerate: Set<String> = setOf(
+    // ignored because it only has streaming operations which we don't support
+    "transcribestreaming",
+
+    // ignored because of a naming conflict `OperationNameError`
+    "redshiftdata",
+
+    // ignored because an output shape is trying to be deserialized, bug?
+    "glacier"
+    )
 
 
 /**
@@ -90,7 +99,7 @@ fun discoverServices(): List<AwsService> {
             val sdkId = service.expectTrait(ServiceTrait::class.java).sdkId.toLowerCase().replace(" ", "")
             AwsService(service = service.id.toString(), module = sdkId, modelFile = file, extraFiles = extras)
         }
-    }.filter { generateOnly == null || generateOnly.contains(it.module) }
+    }.filter { generateOnly == null || generateOnly.contains(it.module) }.filterNot { dontGenerate.contains(it.module) }
 }
 
 fun generateSmithyBuild(tests: List<AwsService>): String {
@@ -111,7 +120,8 @@ fun generateSmithyBuild(tests: List<AwsService>): String {
                         "relativePath": "../"
                       },
                       "codegen": {
-                        "includeFluentClient": false
+                        "includeFluentClient": false,
+                        "renameErrors": false
                       },
                       "service": "${it.service}",
                       "module": "aws-sdk-${it.module}",

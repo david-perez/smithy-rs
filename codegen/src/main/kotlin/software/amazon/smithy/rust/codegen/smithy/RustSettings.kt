@@ -88,6 +88,7 @@ class RustSettings(
             config.warnIfAdditionalProperties(
                 arrayListOf(
                     SERVICE,
+                    CODEGEN_SETTINGS,
                     MODULE_NAME,
                     MODULE_DESCRIPTION,
                     MODULE_AUTHORS,

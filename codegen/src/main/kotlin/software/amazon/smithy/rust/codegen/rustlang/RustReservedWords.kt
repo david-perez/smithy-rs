@@ -24,6 +24,7 @@ class RustReservedWordSymbolProvider(private val base: RustSymbolProvider) : Wra
     override fun toMemberName(shape: MemberShape): String {
         return when (val baseName = internal.toMemberName(shape)) {
             "build" -> "build_value"
+            "default" -> "default_value"
             else -> baseName
         }
     }
@@ -34,7 +35,7 @@ class RustReservedWordSymbolProvider(private val base: RustSymbolProvider) : Wra
 
     override fun toEnumVariantName(definition: EnumDefinition): MaybeRenamed? {
         val baseName = base.toEnumVariantName(definition) ?: return null
-        check(definition.name.orNull()?.let { it.toPascalCase() } == baseName.name) {
+        check(definition.name.orNull()?.toPascalCase() == baseName.name) {
             "Enum variants must already be in pascal case ${baseName.name} differed from ${baseName.name.toPascalCase()}. Definition: ${definition.name}"
         }
         check(baseName.renamedFrom == null) {
@@ -117,6 +118,11 @@ object RustReservedWords : ReservedWords {
     override fun escape(word: String): String = when {
         cantBeRaw.contains(word) -> "${word}_"
         else -> "r##$word"
+    }
+
+    fun escapeIfNeeded(word: String): String = when (isReserved(word)) {
+        true -> escape(word)
+        else -> word
     }
 
     override fun isReserved(word: String): Boolean = RustKeywords.contains(word)
