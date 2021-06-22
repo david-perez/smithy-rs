@@ -42,6 +42,8 @@ buildscript {
 dependencies {
     implementation(project(":aws:sdk-codegen"))
     implementation("software.amazon.smithy:smithy-protocol-test-traits:$smithyVersion")
+    implementation("software.amazon.smithy:smithy-aws-iam-traits:$smithyVersion")
+    implementation("software.amazon.smithy:smithy-aws-cloudformation-traits:$smithyVersion")
     implementation("software.amazon.smithy:smithy-aws-traits:$smithyVersion")
 }
 
@@ -56,6 +58,9 @@ data class AwsService(
 }
 
 val awsServices: Provider<List<AwsService>> = project.providers.provider { discoverServices() }
+
+val generateOnly: Set<String>? = setOf("codebuild")// null // setOf("acm", "acmpca", "autoscaling", "elasticsearchservice", "location", "mediaconvert")
+
 
 /**
  * Discovers services from the `models` directory
@@ -84,7 +89,7 @@ fun discoverServices(): List<AwsService> {
             val sdkId = service.expectTrait(ServiceTrait::class.java).sdkId.toLowerCase().replace(" ", "")
             AwsService(service = service.id.toString(), module = sdkId, modelFile = file, extraFiles = extras)
         }
-    }
+    }.filter { generateOnly == null || generateOnly.contains(it.module) }
 }
 
 fun generateSmithyBuild(tests: List<AwsService>): String {

@@ -9,6 +9,8 @@ if len(sys.argv) != 2:
 
 aws_models = sys.argv[1]
 
+base_list = os.listdir('aws-models')
+
 for model in os.listdir("aws-models"):
     if not model.endswith('.json'):
         continue
@@ -16,5 +18,5 @@ for model in os.listdir("aws-models"):
     source = Path(aws_models) / model_name / 'smithy' / 'model.json'
     if not source.exists():
         print(f'cannout find: {source}')
-        sys.exit(1)
+        continue
     shutil.copyfile(source, Path('aws-models') / model)

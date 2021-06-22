@@ -14,6 +14,7 @@ import software.amazon.smithy.model.traits.EnumDefinition
 import software.amazon.smithy.rust.codegen.smithy.MaybeRenamed
 import software.amazon.smithy.rust.codegen.smithy.RustSymbolProvider
 import software.amazon.smithy.rust.codegen.smithy.WrappingSymbolProvider
+import software.amazon.smithy.rust.codegen.util.orNull
 import software.amazon.smithy.rust.codegen.util.toPascalCase
 
 class RustReservedWordSymbolProvider(private val base: RustSymbolProvider) : WrappingSymbolProvider(base) {
@@ -21,7 +22,11 @@ class RustReservedWordSymbolProvider(private val base: RustSymbolProvider) : Wra
         ReservedWordSymbolProvider.builder().symbolProvider(base).memberReservedWords(RustReservedWords).build()
 
     override fun toMemberName(shape: MemberShape): String {
-        return internal.toMemberName(shape)
+        val baseName = internal.toMemberName(shape)
+        return when (baseName) {
+            "build" -> "build_value"
+            else -> baseName
+        }
     }
 
     override fun toSymbol(shape: Shape): Symbol {
@@ -30,8 +35,8 @@ class RustReservedWordSymbolProvider(private val base: RustSymbolProvider) : Wra
 
     override fun toEnumVariantName(definition: EnumDefinition): MaybeRenamed? {
         val baseName = base.toEnumVariantName(definition) ?: return null
-        check(baseName.name.toPascalCase() == baseName.name) {
-            "Enum variants must already be in pascal case"
+        check(definition.name.orNull()?.let { it.toPascalCase() } == baseName.name) {
+            "Enum variants must already be in pascal case ${baseName.name} differed from ${baseName.name.toPascalCase()}. Definition: ${definition.name}"
         }
         check(baseName.renamedFrom == null) {
             "definitions should only pass through the renamer once"
