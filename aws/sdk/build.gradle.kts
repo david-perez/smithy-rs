@@ -63,13 +63,8 @@ val generateOnly: Set<String>? = null // setOf("acm", "acmpca", "autoscaling", "
 val dontGenerate: Set<String> = setOf(
     // ignored because it only has streaming operations which we don't support
     "transcribestreaming",
-
-    // ignored because of a naming conflict `OperationNameError`
-    "redshiftdata",
-
-    // ignored because an output shape is trying to be deserialized, bug?
     "glacier"
-    )
+)
 
 
 /**
