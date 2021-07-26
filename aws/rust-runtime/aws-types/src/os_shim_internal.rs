@@ -32,6 +32,7 @@ use std::sync::Arc;
 ///     map
 /// });
 /// ```
+#[derive(Debug)]
 pub struct Fs(fs::Inner);
 
 impl Fs {
@@ -74,6 +75,7 @@ mod fs {
     use std::collections::HashMap;
     use std::ffi::OsString;
 
+    #[derive(Debug)]
     pub enum Inner {
         Real,
         Fake { fs: HashMap<OsString, Vec<u8>> },
@@ -89,7 +91,7 @@ mod fs {
 /// Process environments are cheap to clone:
 /// - Faked process environments are wrapped in an internal Arc
 /// - Real process environments are pointer-sized
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Env(env::Inner);
 
 impl Env {
@@ -139,7 +141,7 @@ mod env {
     use std::collections::HashMap;
     use std::sync::Arc;
 
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub enum Inner {
         Real,
         Fake(Arc<HashMap<String, String>>),

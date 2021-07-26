@@ -29,7 +29,7 @@ val runtimeModules = listOf(
     "smithy-client",
     "protocol-test-helpers"
 )
-val awsModules = listOf("aws-auth", "aws-endpoint", "aws-types", "aws-hyper", "aws-sig-auth", "aws-http")
+val awsModules = listOf("aws-auth", "aws-auth-providers", "aws-endpoint", "aws-types", "aws-hyper", "aws-sig-auth", "aws-http")
 
 buildscript {
     val smithyVersion: String by project
@@ -309,6 +309,7 @@ fun generateCargoWorkspace(services: List<AwsService>): String {
     ]
     """.trimIndent()
 }
+
 task("generateCargoWorkspace") {
     description = "generate Cargo.toml workspace file"
     doFirst {

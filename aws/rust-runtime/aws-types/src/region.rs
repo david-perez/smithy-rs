@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  */
 
-use crate::os_shim_internal::Env;
+use crate::os_shim_internal::{Env, Fs};
 use std::borrow::Cow;
 
 /// The region to send requests to.
@@ -69,12 +69,6 @@ impl ChainProvider {
     }
 }
 
-impl ProvideRegion for Option<Region> {
-    fn region(&self) -> Option<Region> {
-        self.clone()
-    }
-}
-
 impl ProvideRegion for ChainProvider {
     fn region(&self) -> Option<Region> {
         for provider in &self.providers {
@@ -100,6 +94,12 @@ impl ProvideRegion for Region {
     }
 }
 
+impl ProvideRegion for Option<Region> {
+    fn region(&self) -> Option<Region> {
+        self.clone()
+    }
+}
+
 impl<'a> ProvideRegion for &'a Region {
     fn region(&self) -> Option<Region> {
         Some((*self).clone())
@@ -107,7 +107,19 @@ impl<'a> ProvideRegion for &'a Region {
 }
 
 pub fn default_provider() -> impl ProvideRegion {
-    EnvironmentProvider::new()
+    configured::default_provider(Fs::real(), Env::real())
+}
+
+/// Hidden module providing a provider where the filesystem and environment variables can be overriden
+#[doc(hidden)]
+pub mod configured {
+    use crate::os_shim_internal::{Env, Fs};
+    use crate::region::{ChainProvider, EnvironmentProvider, ProfileFileProvider, ProvideRegion};
+
+    pub fn default_provider(fs: Fs, env: Env) -> impl ProvideRegion {
+        ChainProvider::first_try(EnvironmentProvider::new_with_shim(env.clone()))
+            .or_else(ProfileFileProvider::new_with_shim(fs, env.clone()))
+    }
 }
 
 #[non_exhaustive]
@@ -121,10 +133,13 @@ impl Default for EnvironmentProvider {
     }
 }
 
-#[allow(clippy::redundant_closure)] // https://github.com/rust-lang/rust-clippy/issues/7218
 impl EnvironmentProvider {
     pub fn new() -> Self {
         EnvironmentProvider { env: Env::real() }
+    }
+
+    pub fn new_with_shim(env: Env) -> Self {
+        EnvironmentProvider { env }
     }
 }
 
@@ -135,6 +150,39 @@ impl ProvideRegion for EnvironmentProvider {
             .or_else(|_| self.env.get("AWS_DEFAULT_REGION"))
             .map(Region::new)
             .ok()
+    }
+}
+
+pub struct ProfileFileProvider {
+    fs: Fs,
+    env: Env,
+}
+
+impl ProfileFileProvider {
+    pub fn new() -> Self {
+        Self {
+            fs: Fs::real(),
+            env: Env::real(),
+        }
+    }
+
+    pub fn new_with_shim(fs: Fs, env: Env) -> Self {
+        Self { fs, env }
+    }
+}
+
+impl ProvideRegion for ProfileFileProvider {
+    fn region(&self) -> Option<Region> {
+        let profile = crate::profile::load(&self.fs, &self.env);
+        match profile {
+            Ok(profile) => profile
+                .get("region")
+                .map(|prop| Region::new(prop.value().to_string())),
+            Err(e) => {
+                tracing::warn!(error = %e, "failed to parse profile file when loading region information");
+                None
+            }
+        }
     }
 }
 
@@ -164,34 +212,82 @@ impl SigningRegion {
 
 #[cfg(test)]
 mod test {
-    use crate::os_shim_internal::Env;
-    use crate::region::{EnvironmentProvider, ProvideRegion, Region};
+    use crate::os_shim_internal::{Env, Fs};
+    use crate::region::{ProvideRegion, Region};
 
-    fn test_provider(vars: &[(&str, &str)]) -> EnvironmentProvider {
-        EnvironmentProvider {
-            env: Env::from_slice(vars),
-        }
+    fn test_provider(vars: &[(&str, &str)], files: &[(&str, &str)]) -> impl ProvideRegion {
+        super::configured::default_provider(
+            Fs::from_map(
+                files
+                    .iter()
+                    .map(|(name, contents)| ((*name).into(), (*contents).into()))
+                    .collect(),
+            ),
+            Env::from_slice(vars),
+        )
     }
 
     #[test]
     fn no_region() {
-        assert_eq!(test_provider(&[]).region(), None);
+        assert_eq!(test_provider(&[], &[]).region(), None);
     }
 
     #[test]
     fn prioritize_aws_region() {
-        let provider = test_provider(&[
-            ("AWS_REGION", "us-east-1"),
-            ("AWS_DEFAULT_REGION", "us-east-2"),
-        ]);
+        let provider = test_provider(
+            &[
+                ("AWS_REGION", "us-east-1"),
+                ("AWS_DEFAULT_REGION", "us-east-2"),
+            ],
+            &[],
+        );
         assert_eq!(provider.region(), Some(Region::new("us-east-1")));
     }
 
     #[test]
     fn fallback_to_default_region() {
         assert_eq!(
-            test_provider(&[("AWS_DEFAULT_REGION", "us-east-2")]).region(),
+            test_provider(&[("AWS_DEFAULT_REGION", "us-east-2")], &[]).region(),
             Some(Region::new("us-east-2"))
         );
+    }
+
+    use tracing_test::traced_test;
+
+    #[test]
+    #[traced_test]
+    fn use_aws_config() {
+        let config = "[default]\nregion = us-east-1";
+        let provider = test_provider(
+            &[("HOME", "/users/myname")],
+            &[("/users/myname/.aws/config", config)],
+        );
+        assert_eq!(provider.region(), Some(Region::new("us-east-1")));
+    }
+
+    #[test]
+    #[traced_test]
+    fn use_aws_config_profile_override() {
+        let config = "[default]\nregion = us-east-1\n[profile other]\nregion = us-west-3";
+        let provider = test_provider(
+            &[("HOME", "/users/myname"), ("AWS_PROFILE", "other")],
+            &[("/users/myname/.aws/config", config)],
+        );
+        assert_eq!(provider.region(), Some(Region::new("us-west-3")));
+    }
+
+    #[test]
+    #[traced_test]
+    fn log_on_unparseable_file() {
+        let config = "[default]\nregion = us-east-1\n[profile other]region = us-west-3";
+        let provider = test_provider(
+            &[("HOME", "/users/myname"), ("AWS_PROFILE", "other")],
+            &[("/users/myname/.aws/config", config)],
+        );
+        assert_eq!(provider.region(), None);
+        assert!(logs_contain("failed to parse profile file"));
+        assert!(logs_contain(
+            "error parsing /users/name/.aws/config on line 3"
+        ));
     }
 }

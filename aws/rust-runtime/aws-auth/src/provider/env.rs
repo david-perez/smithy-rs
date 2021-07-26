@@ -17,6 +17,9 @@ impl EnvironmentVariableCredentialsProvider {
     pub fn new() -> Self {
         EnvironmentVariableCredentialsProvider { env: Env::real() }
     }
+    pub fn new_with_env(env: Env) -> Self {
+        EnvironmentVariableCredentialsProvider { env }
+    }
 }
 
 impl Default for EnvironmentVariableCredentialsProvider {

@@ -21,13 +21,17 @@ use std::sync::Arc;
 #[non_exhaustive]
 pub enum CredentialsError {
     CredentialsNotLoaded,
+    ErrorLoading(Box<dyn Error + Send + Sync + 'static>),
     Unhandled(Box<dyn Error + Send + Sync + 'static>),
 }
 
 impl Display for CredentialsError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            CredentialsError::CredentialsNotLoaded => write!(f, "CredentialsNotLoaded"),
+            CredentialsError::CredentialsNotLoaded => write!(f, "credentials not loaded"),
+            CredentialsError::ErrorLoading(err) => {
+                write!(f, "could not load credentials: {}", err)
+            }
             CredentialsError::Unhandled(err) => write!(f, "{}", err),
         }
     }
@@ -37,6 +41,7 @@ impl Error for CredentialsError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             CredentialsError::Unhandled(e) => Some(e.as_ref() as _),
+            CredentialsError::ErrorLoading(e) => Some(e.as_ref() as _),
             _ => None,
         }
     }

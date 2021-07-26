@@ -76,6 +76,9 @@ pub struct ProfileSet {
 }
 
 impl ProfileSet {
+    pub fn selected_profile(&self) -> &str {
+        self.selected_profile.as_ref()
+    }
     fn parse(source: Source) -> Result<Self, ProfileParseError> {
         let mut base = ProfileSet::empty();
         base.selected_profile = source.profile;
@@ -125,6 +128,10 @@ pub struct Profile {
 impl Profile {
     pub fn new(name: String, properties: HashMap<String, Property>) -> Self {
         Self { name, properties }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn get(&self, name: &str) -> Option<&Property> {

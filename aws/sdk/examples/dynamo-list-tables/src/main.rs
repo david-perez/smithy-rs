@@ -35,14 +35,15 @@ async fn main() {
     if verbose {
         println!("DynamoDB client version: {}", dynamodb::PKG_VERSION);
         println!("Region:      {:?}", &region);
-
-        SubscriberBuilder::default()
-            .with_env_filter("info")
-            .with_span_events(FmtSpan::CLOSE)
-            .init();
+        tracing_subscriber::fmt::init()
     }
 
-    let config = Config::builder().region(region).build();
+    let creds = aws_auth_providers::ProfileFileProvider::new();
+
+    let config = Config::builder()
+        .region(region)
+        .credentials_provider(creds)
+        .build();
 
     let client = Client::from_conf(config);
 

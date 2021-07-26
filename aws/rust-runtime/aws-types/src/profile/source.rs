@@ -99,7 +99,7 @@ fn load_config_file(
         Err(e) => {
             match e.kind() {
                 ErrorKind::NotFound if path == kind.default_path() => {
-                    tracing::info!(path = %path, "config file not found")
+                    tracing::info!(path = ?expanded, "config file not found")
                 }
                 ErrorKind::NotFound if path != kind.default_path() => {
                     // in the case where the user overrode the path with an environment variable,
