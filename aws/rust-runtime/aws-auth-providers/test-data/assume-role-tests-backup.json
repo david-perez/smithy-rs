@@ -1,0 +1,164 @@
+[
+  {
+    "docs": "basic test case, a role_arn backed by a static credential",
+    "input": {
+      "profile": {
+        "A": {
+          "role_arn": "arn:aws:iam::123456789:role/RoleA",
+          "source_profile": "B"
+        },
+        "B": {
+          "aws_access_key_id": "abc123",
+          "aws_secret_access_key": "def456"
+        },
+        "selected_profile": "A"
+      }
+    },
+    "output": {
+      "Chain": [
+        {
+          "AccessKey": {
+            "access_key_id": "abc123",
+            "secret_access_key": "def456"
+          }
+        },
+        {
+          "AssumeRole": {
+            "role_arn": "arn:aws:iam::123456789:role/RoleA"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "docs": "ignore credentials when role is specified",
+    "input": {
+      "config_file": "[profile A]\naws_access_key_id = abc123\naws_secret_access_key = def456\nrole_arn = arn:aws:iam::123456789:role/RoleA\nsource_profile = B\n\n[profile B]\naws_access_key_id = ghi890\naws_secret_access_key = jkl123",
+      "env": {
+        "AWS_PROFILE": "A"
+      }
+    },
+    "output": {
+      "Chain": [
+        {
+          "AccessKey": {
+            "access_key_id": "ghi890",
+            "secret_access_key": "jkl123"
+          }
+        },
+        {
+          "AssumeRole": {
+            "role_arn": "arn:aws:iam::123456789:role/RoleA"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "docs": "load role_session_name",
+    "input": {
+      "config_file": "[profile A]\nrole_arn = arn:aws:iam::123456789:role/RoleA\nrole_session_name = my_session_name\nsource_profile = B\n\n[profile B]\naws_access_key_id = abc123\naws_secret_access_key = def456",
+      "env": {
+        "AWS_PROFILE": "A"
+      }
+    },
+    "output": {
+      "Chain": [
+        {
+          "AccessKey": {
+            "access_key_id": "abc123",
+            "secret_access_key": "def456"
+          }
+        },
+        {
+          "AssumeRole": {
+            "role_arn": "arn:aws:iam::123456789:role/RoleA",
+            "role_session_name": "my_session_name"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "docs": "load external id",
+    "input": {
+      "config_file": "[profile A]\nrole_arn = arn:aws:iam::123456789:role/RoleA\nexternal_id = my_external_id\nsource_profile = B\n\n[profile B]\naws_access_key_id = abc123\naws_secret_access_key = def456",
+      "env": {
+        "AWS_PROFILE": "A"
+      }
+    },
+    "output": {
+      "Chain": [
+        {
+          "AccessKey": {
+            "access_key_id": "abc123",
+            "secret_access_key": "def456"
+          }
+        },
+        {
+          "AssumeRole": {
+            "role_arn": "arn:aws:iam::123456789:role/RoleA",
+            "external_id": "my_external_id"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "docs": "self referential profile (first load base creds, then use for the role)",
+    "input": {
+      "config_file": "[profile A]\naws_access_key_id = abc123\naws_secret_access_key = def456\nrole_arn = arn:aws:iam::123456789:role/RoleA\nsource_profile = A",
+      "env": {
+        "AWS_PROFILE": "A"
+      }
+    },
+    "output": {
+      "Chain": [
+        {
+          "AccessKey": {
+            "access_key_id": "abc123",
+            "secret_access_key": "def456"
+          }
+        },
+        {
+          "AssumeRole": {
+            "role_arn": "arn:aws:iam::123456789:role/RoleA"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "docs": "ec2 instance metadata",
+    "input": {
+      "config_file": "[profile A]\nrole_arn = arn:aws:iam::123456789:role/RoleA\ncredential_source = Ec2InstanceMetadata\n",
+      "env": {
+        "AWS_PROFILE": "A"
+      }
+    },
+    "output": {
+      "Chain": [
+        {
+          "NamedSource": "Ec2InstanceMetadata"
+        },
+        {
+          "AssumeRole": {
+            "role_arn": "arn:aws:iam::123456789:role/RoleA"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "docs": "no source (error)",
+    "input": {
+      "config_file": "[profile A]\nrole_arn = arn:aws:iam::123456789:role/RoleA",
+      "env": {
+        "AWS_PROFILE": "A"
+      }
+    },
+    "output": {
+      "Error": "profile must contain source_profile"
+    }
+  }
+]
