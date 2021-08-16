@@ -129,6 +129,11 @@ impl ProfileSet {
         }
     }
 
+    /// Returns true if no profiles are contained in this profile set
+    pub fn is_empty(&self) -> bool {
+        self.profiles.is_empty()
+    }
+
     /// Retrieves a key-value pair from the currently selected profile
     pub fn get(&self, key: &str) -> Option<&str> {
         self.profiles
@@ -274,8 +279,25 @@ mod test {
                 path: "~/.aws/credentials".to_string(),
                 contents: input.credentials_file.unwrap_or_default(),
             },
-            profile: Default::default(),
+            profile: "default".into(),
         }
+    }
+
+    #[test]
+    fn empty_source_empty_profile() {
+        let source = Source {
+            config_file: File {
+                path: "~/.aws/config".to_string(),
+                contents: "".into(),
+            },
+            credentials_file: File {
+                path: "~/.aws/credentials".to_string(),
+                contents: "".into(),
+            },
+            profile: "default".into(),
+        };
+        let profile_set = ProfileSet::parse(source).expect("empty profiles are valid");
+        assert_eq!(profile_set.is_empty(), true);
     }
 
     // wrapper to generate nicer errors during test failure

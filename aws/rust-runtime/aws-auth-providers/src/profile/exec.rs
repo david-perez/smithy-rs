@@ -16,6 +16,7 @@ use crate::profile::repr::BaseProvider;
 use crate::profile::ProfileFileError;
 
 use super::repr;
+use crate::sts_util;
 use std::fmt::{Debug, Formatter};
 
 #[derive(Debug)]
@@ -40,14 +41,15 @@ impl AssumeRoleProvider {
             .credentials_provider(input_credentials)
             .region(client_config.region.clone())
             .build();
+        let session_name = &self
+            .session_name
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| sts_util::default_session_name("assume-role-from-profile"));
         let operation = AssumeRole::builder()
             .role_arn(&self.role_arn)
             .set_external_id(self.external_id.clone())
-            .role_session_name(
-                self.session_name
-                    .as_deref()
-                    .unwrap_or("assume-role-provider-session"),
-            )
+            .role_session_name(session_name)
             .build()
             .expect("operation is valid")
             .make_operation(&config)
@@ -56,32 +58,9 @@ impl AssumeRoleProvider {
             .core_client
             .call(operation)
             .await
-            .map_err(|err| CredentialsError::Unhandled(err.into()))?
-            .credentials
-            .ok_or_else(|| {
-                CredentialsError::Unhandled(
-                    "assume role provider did not return credentials".into(),
-                )
-            })?;
-        let expiration = assume_role_creds
-            .expiration
-            .ok_or_else(|| CredentialsError::Unhandled("missing expiration".into()))?;
-        let expiration = expiration.to_system_time().ok_or_else(|| {
-            CredentialsError::Unhandled(
-                format!("expiration is before unix epoch: {:?}", &expiration).into(),
-            )
-        })?;
-        Ok(Credentials::new(
-            assume_role_creds.access_key_id.ok_or_else(|| {
-                CredentialsError::Unhandled("access key id missing from result".into())
-            })?,
-            assume_role_creds
-                .secret_access_key
-                .ok_or_else(|| CredentialsError::Unhandled("secret access token missing".into()))?,
-            assume_role_creds.session_token,
-            Some(expiration),
-            "AssumeRoleProvider",
-        ))
+            .map_err(|err| CredentialsError::ProviderError(err.into()))?
+            .credentials;
+        crate::sts_util::into_credentials(assume_role_creds, "AssumeRoleProvider")
     }
 }
 

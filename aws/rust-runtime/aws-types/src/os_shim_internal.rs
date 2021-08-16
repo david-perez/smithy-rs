@@ -32,7 +32,8 @@ use std::sync::Arc;
 ///     map
 /// });
 /// ```
-pub struct Fs(fs::Inner);
+#[derive(Clone)]
+pub struct Fs(Arc<fs::Inner>);
 
 impl Default for Fs {
     fn default() -> Self {
@@ -42,29 +43,29 @@ impl Default for Fs {
 
 impl Fs {
     pub fn real() -> Self {
-        Fs(fs::Inner::Real)
+        Fs(Arc::new(fs::Inner::Real))
     }
 
     pub fn from_raw_map(fs: HashMap<OsString, Vec<u8>>) -> Self {
-        Fs(fs::Inner::Fake { fs })
+        Fs(Arc::new(fs::Inner::Fake { fs }))
     }
 
     pub fn from_map(data: HashMap<String, Vec<u8>>) -> Self {
         let fs = data.into_iter().map(|(k, v)| (k.into(), v)).collect();
-        Fs(fs::Inner::Fake { fs })
+        Fs(Arc::new(fs::Inner::Fake { fs }))
     }
 
     pub fn from_test_dir(dir: impl Into<PathBuf>, root: impl Into<PathBuf>) -> Self {
-        Self(fs::Inner::Namespaced {
+        Self(Arc::new(fs::Inner::Namespaced {
             real_path: dir.into(),
             namespaced_to: root.into(),
-        })
+        }))
     }
 
     pub fn read_to_end(&self, path: impl AsRef<Path>) -> std::io::Result<Vec<u8>> {
         use fs::Inner;
         let path = path.as_ref();
-        match &self.0 {
+        match &self.0.as_ref() {
             Inner::Real => std::fs::read(path),
             Inner::Fake { fs } => fs
                 .get(path.as_os_str())

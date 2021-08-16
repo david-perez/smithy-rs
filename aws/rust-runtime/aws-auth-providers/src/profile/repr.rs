@@ -100,6 +100,9 @@ pub fn resolve_chain(profile_set: &ProfileSet) -> Result<ProfileChain, ProfileFi
     let mut source_profile_name = profile_set.selected_profile();
     let mut visited_profiles = vec![];
     let mut chain = vec![];
+    if profile_set.is_empty() {
+        return Err(ProfileFileError::NoProfilesDefined);
+    }
     let base = loop {
         let profile = profile_set.get_profile(source_profile_name).ok_or(
             ProfileFileError::MissingProfile {

@@ -1,0 +1,104 @@
+{
+  "docs": "attempt to assume a role with an invalid token (this token is valid JWT but is missing the correct fields)",
+  "version": "V0",
+  "events": [
+    {
+      "connection_id": 0,
+      "action": {
+        "Request": {
+          "request": {
+            "uri": "https://sts.us-east-1.amazonaws.com/",
+            "headers": {
+              "user-agent": [
+                "aws-sdk-rust/0.1.0 os/macos lang/rust/1.55.0-nightly"
+              ],
+              "content-length": [
+                "424"
+              ],
+              "content-type": [
+                "application/x-www-form-urlencoded"
+              ],
+              "host": [
+                "sts.us-east-1.amazonaws.com"
+              ],
+              "x-amz-user-agent": [
+                "aws-sdk-rust/0.1.0 api/sts/0.0.15-alpha os/macos lang/rust/1.55.0-nightly"
+              ]
+            },
+            "method": "POST"
+          }
+        }
+      }
+    },
+    {
+      "connection_id": 0,
+      "action": {
+        "Data": {
+          "data": {
+            "Utf8": "Action=AssumeRoleWithWebIdentity&Version=2011-06-15&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789123%3Arole%2Ftest-role&RoleSessionName=test-session&WebIdentityToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2MjkxNDM3NjEsImV4cCI6MTY2MDY3OTc2MSwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoicnVzdC1zZGstdGVzdEBleGFtcGxlLmNvbSIsIlJvbGUiOiJTREsgVGVzdCJ9.Cx9Ko-ssGIJ5BM798_Jgo9f--lEsSNKCAjBxv-0qQQQ"
+          },
+          "direction": "Request"
+        }
+      }
+    },
+    {
+      "connection_id": 0,
+      "action": {
+        "Eof": {
+          "ok": true,
+          "direction": "Request"
+        }
+      }
+    },
+    {
+      "connection_id": 0,
+      "action": {
+        "Response": {
+          "response": {
+            "Ok": {
+              "status": 400,
+              "version": "HTTP/1.1",
+              "headers": {
+                "connection": [
+                  "close"
+                ],
+                "date": [
+                  "Mon, 16 Aug 2021 20:27:29 GMT"
+                ],
+                "content-length": [
+                  "276"
+                ],
+                "x-amzn-requestid": [
+                  "865a1c43-acd6-4930-a638-9ffcdc47d339"
+                ],
+                "content-type": [
+                  "text/xml"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "connection_id": 0,
+      "action": {
+        "Data": {
+          "data": {
+            "Utf8": "<ErrorResponse xmlns=\"https://sts.amazonaws.com/doc/2011-06-15/\">\n  <Error>\n    <Type>Sender</Type>\n    <Code>InvalidIdentityToken</Code>\n    <Message>Error normalizing issuer</Message>\n  </Error>\n  <RequestId>865a1c43-acd6-4930-a638-9ffcdc47d339</RequestId>\n</ErrorResponse>\n"
+          },
+          "direction": "Response"
+        }
+      }
+    },
+    {
+      "connection_id": 0,
+      "action": {
+        "Eof": {
+          "ok": true,
+          "direction": "Response"
+        }
+      }
+    }
+  ]
+}

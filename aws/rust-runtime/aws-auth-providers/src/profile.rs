@@ -127,8 +127,11 @@ impl ProfileFileCredentialProvider {
     }
 
     async fn load_credentials(&self) -> CredentialsResult {
-        let inner = self.inner.as_ref().map_err(|err| {
-            CredentialsError::Unhandled(format!("failed to load: {}", &err).into())
+        let inner = self.inner.as_ref().map_err(|err| match err {
+            ProfileFileError::NoProfilesDefined => CredentialsError::CredentialsNotLoaded,
+            _ => CredentialsError::InvalidConfiguration(
+                format!("ProfileFile provider could not be built: {}", &err).into(),
+            ),
         })?;
         let mut creds = match inner
             .base()
@@ -169,6 +172,7 @@ impl ProfileFileCredentialProvider {
 #[non_exhaustive]
 pub enum ProfileFileError {
     CouldNotParseProfile(ProfileParseError),
+    NoProfilesDefined,
     CredentialLoop {
         profiles: Vec<String>,
         next: String,
@@ -216,6 +220,7 @@ impl Display for ProfileFileError {
                 "profile referenced `{}` provider but that provider is not supported",
                 name
             ),
+            ProfileFileError::NoProfilesDefined => write!(f, "No profiles were defined"),
         }
     }
 }
@@ -231,8 +236,8 @@ impl Error for ProfileFileError {
 
 #[derive(Default)]
 pub struct Builder {
-    fs: Option<Fs>,
-    env: Option<Env>,
+    fs: Fs,
+    env: Env,
     region: Option<Region>,
     connector: Option<DynConnector>,
     custom_providers: HashMap<Cow<'static, str>, Arc<dyn AsyncProvideCredentials>>,
@@ -240,21 +245,21 @@ pub struct Builder {
 
 impl Builder {
     pub fn fs(mut self, fs: Fs) -> Self {
-        self.fs = Some(fs);
+        self.fs = fs;
         self
     }
 
-    pub fn set_fs(&mut self, fs: Option<Fs>) -> &mut Self {
+    pub fn set_fs(&mut self, fs: Fs) -> &mut Self {
         self.fs = fs;
         self
     }
 
     pub fn env(mut self, env: Env) -> Self {
-        self.env = Some(env);
+        self.env = env;
         self
     }
 
-    pub fn set_env(&mut self, env: Option<Env>) -> &mut Self {
+    pub fn set_env(&mut self, env: Env) -> &mut Self {
         self.env = env;
         self
     }
@@ -292,8 +297,8 @@ impl Builder {
     pub fn build(self) -> ProfileFileCredentialProvider {
         let build_span = tracing::info_span!("build_profile_provider");
         let _enter = build_span.enter();
-        let fs = self.fs.unwrap_or_default();
-        let env = self.env.unwrap_or_default();
+        let fs = self.fs;
+        let env = self.env;
         let mut named_providers = self.custom_providers;
         named_providers
             .entry("Environment".into())
@@ -484,7 +489,7 @@ mod test {
                 .await
                 .expect_err("config was invalid");
             assert!(
-                format!("{}", error).contains("profile `default` was not defined"),
+                format!("{}", error).contains("The provider could not provide credentials"),
                 "{} should contain correct error",
                 error
             )

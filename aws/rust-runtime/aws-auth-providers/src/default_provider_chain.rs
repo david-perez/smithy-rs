@@ -58,6 +58,7 @@ impl AsyncProvideCredentials for DefaultProviderChain {
 #[derive(Default)]
 pub struct Builder {
     profile_file_builder: crate::profile::Builder,
+    web_identity_builder: crate::web_identity_token::Builder,
     credential_cache: aws_auth::provider::lazy_caching::builder::Builder,
     env: Option<Env>,
 }
@@ -68,6 +69,7 @@ impl Builder {
     /// When unset, the default region resolver chain will be used.
     pub fn region(mut self, region: &dyn ProvideRegion) -> Self {
         self.profile_file_builder.set_region(region.region());
+        self.web_identity_builder.set_region(region.region());
         self
     }
 
@@ -76,7 +78,9 @@ impl Builder {
     /// If a connector other than Hyper is used or if the Tokio/Hyper features have been disabled
     /// this method MUST be used to specify a custom connector.
     pub fn connector(mut self, connector: DynConnector) -> Self {
-        self.profile_file_builder.set_connector(Some(connector));
+        self.profile_file_builder
+            .set_connector(Some(connector.clone()));
+        self.web_identity_builder.set_connector(Some(connector));
         self
     }
 
@@ -133,7 +137,8 @@ impl Builder {
     ///
     /// This method exists primarily for testing credential providers
     pub fn fs(mut self, fs: Fs) -> Self {
-        self.profile_file_builder.set_fs(Some(fs));
+        self.profile_file_builder.set_fs(fs.clone());
+        self.web_identity_builder.set_fs(fs);
         self
     }
 
@@ -143,7 +148,8 @@ impl Builder {
     /// This method exists primarily for testing credential providers
     pub fn env(mut self, env: Env) -> Self {
         self.env = Some(env.clone());
-        self.profile_file_builder.set_env(Some(env));
+        self.profile_file_builder.set_env(env.clone());
+        self.web_identity_builder.set_env(env);
         self
     }
 
@@ -151,7 +157,9 @@ impl Builder {
         let profile_provider = self.profile_file_builder.build();
         let env_provider =
             EnvironmentVariableCredentialsProvider::new_with_env(self.env.unwrap_or_default());
+        let web_identity_token_provider = self.web_identity_builder.build();
         let provider_chain = crate::chain::ChainProvider::first_try("Environment", env_provider)
+            .or_else("WebIdentityToken", web_identity_token_provider)
             .or_else("Profile", profile_provider);
         let cached_provider = self.credential_cache.load(provider_chain);
         DefaultProviderChain(cached_provider.build())
@@ -163,8 +171,11 @@ mod test {
     use crate::DefaultProviderChain;
     use aws_auth::provider::AsyncProvideCredentials;
     use aws_hyper::DynConnector;
+    use aws_sdk_sts::Region;
     use aws_types::os_shim_internal::{Env, Fs};
-    use smithy_client::dvr::ReplayingConnection;
+    use smithy_client::dvr;
+    use smithy_client::dvr::{NetworkTraffic, ReplayingConnection};
+    use std::error::Error;
     use tracing_test::traced_test;
 
     #[tokio::test]
@@ -208,5 +219,34 @@ mod test {
         let creds = provider.provide_credentials().await.expect("valid creds");
         assert_eq!(creds.access_key_id(), "correct_key");
         assert_eq!(creds.secret_access_key(), "correct_secret")
+    }
+
+    #[traced_test]
+    #[tokio::test]
+    async fn use_web_token() -> Result<(), Box<dyn Error>> {
+        let env = Env::from_slice(&[
+            ("AWS_WEB_IDENTITY_TOKEN_FILE", "/token.jwt"),
+            (
+                "AWS_IAM_ROLE_ARN",
+                "arn:aws:iam::123456789123:role/test-role",
+            ),
+            ("AWS_IAM_ROLE_SESSION_NAME", "test-session"),
+            ("AWS_REGION", "us-east-1"),
+        ]);
+        let fs = Fs::from_test_dir("test-data/web-identity-token", "/");
+        let traffic: NetworkTraffic = serde_json::from_str(&std::fs::read_to_string(
+            "test-data/web-identity-token/http-traffic.json",
+        )?)?;
+        let connection = dvr::ReplayingConnection::new(traffic.events().clone());
+        let provider = DefaultProviderChain::builder()
+            .fs(fs)
+            .env(env)
+            .region(&Region::new("us-east-1"))
+            .connector(DynConnector::new(connection))
+            .build();
+        let creds = provider.provide_credentials().await.expect("valid creds");
+        assert_eq!(creds.access_key_id(), "AKIDTEST");
+        assert_eq!(creds.secret_access_key(), "SECRETKEYTEST");
+        Ok(())
     }
 }

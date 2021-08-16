@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  */
 
-use crate::provider::CredentialsProvider;
+use crate::provider::{CredentialsError, CredentialsProvider};
 use smithy_http::middleware::AsyncMapRequest;
 use smithy_http::operation::Request;
 use std::future::Future;
@@ -23,6 +23,30 @@ pub struct CredentialsStage;
 impl CredentialsStage {
     pub fn new() -> Self {
         CredentialsStage
+    }
+
+    async fn load_creds(mut request: Request) -> Result<Request, CredentialsStageError> {
+        let provider = request.properties().get::<CredentialsProvider>().cloned();
+        let provider = match provider {
+            Some(provider) => provider,
+            None => {
+                tracing::info!("no credentials provider for request");
+                return Ok(request);
+            }
+        };
+        match provider.provide_credentials().await {
+            Ok(creds) => {
+                request.properties_mut().insert(creds);
+            }
+            // ignore the case where there is no provider wired up
+            Err(CredentialsError::CredentialsNotLoaded) => {
+                tracing::info!("provider returned CredentialsNotLoaded, ignoring")
+            }
+            // if we get another error class, there is probably something actually wrong that the user will
+            // want to know about
+            Err(other) => return Err(CredentialsStageError::CredentialsLoadingError(other)),
+        }
+        Ok(request)
     }
 }
 
@@ -70,22 +94,8 @@ impl AsyncMapRequest for CredentialsStage {
     type Error = CredentialsStageError;
     type Future = Pin<Box<dyn Future<Output = Result<Request, Self::Error>> + Send + 'static>>;
 
-    fn apply(&self, mut request: Request) -> BoxFuture<Result<Request, Self::Error>> {
-        Box::pin(async move {
-            let provider = {
-                let properties = request.properties();
-                let credential_provider = properties
-                    .get::<CredentialsProvider>()
-                    .ok_or(CredentialsStageError::MissingCredentialsProvider)?;
-                // we need to enable releasing the config lock so that we don't hold the config
-                // lock across an await point
-                credential_provider.clone()
-            };
-            let cred_future = { provider.provide_credentials() };
-            let credentials = cred_future.await?;
-            request.properties_mut().insert(credentials);
-            Ok(request)
-        })
+    fn apply(&self, request: Request) -> BoxFuture<Result<Request, Self::Error>> {
+        Box::pin(Self::load_creds(request))
     }
 }
 

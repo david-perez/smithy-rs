@@ -53,8 +53,12 @@ impl ChainProvider {
                     tracing::info!(provider = %name, "loaded credentials");
                     return Ok(credentials);
                 }
+                Err(CredentialsError::CredentialsNotLoaded) => {
+                    tracing::info!(provider = %name, "provider in chain did not provide credentials");
+                    last_error = CredentialsError::CredentialsNotLoaded;
+                }
                 Err(e) => {
-                    tracing::info!(provider = %name, error = %e, "provider in chain did not provide credentials");
+                    tracing::warn!(provider = %name, error = %e, "provider failed to provide credentials");
                     last_error = e
                 }
             }
