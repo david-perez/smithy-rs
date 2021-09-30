@@ -107,7 +107,7 @@ private class AwsFluentClientExtensions(private val types: Types) {
 
                 ##[cfg(any(feature = "rustls", feature = "native-tls"))]
                 pub fn from_conf(conf: crate::Config) -> Self {
-                    let client = #{aws_hyper}::Client::https();
+                    let client = #{aws_hyper}::Client::https().with_retry_config(conf.retry_config);
                     Self { handle: std::sync::Arc::new(Handle { client, conf }) }
                 }
                 """,

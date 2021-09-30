@@ -72,7 +72,11 @@ pub mod provider_config;
 mod cache;
 #[cfg(feature = "imds")]
 pub mod imds;
+
+#[cfg(feature = "imds")]
 mod json_credentials;
+
+mod http_provider;
 
 /// Create an environment loader for AWS Configuration
 ///
@@ -195,22 +199,34 @@ mod connector {
     // no      | yes        | native_tls
     // no      | no         | no default
 
+    use crate::provider_config::HttpSettings;
+    use smithy_async::rt::sleep::AsyncSleep;
     use smithy_client::erase::DynConnector;
+    use std::sync::Arc;
 
     // unused when all crate features are disabled
     #[allow(dead_code)]
-    pub fn expect_connector(connector: Option<DynConnector>) -> DynConnector {
+    pub(crate) fn expect_connector(connector: Option<DynConnector>) -> DynConnector {
         connector.expect("A connector was not available. Either set a custom connector or enable the `rustls` and `native-tls` crate features.")
     }
 
     #[cfg(feature = "rustls")]
-    pub fn default_connector() -> Option<DynConnector> {
-        Some(DynConnector::new(smithy_client::conns::https()))
+    pub(crate) fn default_connector(
+        settings: &HttpSettings,
+        sleep: Arc<dyn AsyncSleep>,
+    ) -> Option<DynConnector> {
+        let hyper = smithy_client::hyper_ext::Adapter::builder()
+            .timeout(&settings.timeout_config)
+            .sleep_impl(sleep)
+            .build(smithy_client::conns::https());
+        Some(DynConnector::new(hyper))
     }
 
     #[cfg(all(not(feature = "rustls"), feature = "native-tls"))]
     pub fn default_connector() -> Option<DynConnector> {
-        Some(DynConnector::new(smithy_client::conns::native_tls()))
+        let hyper =
+            smithy_client::hyper_ext::Adapter::builder().build(smithy_client::conns::native_tls());
+        Some(DynConnector::new(hyper))
     }
 
     #[cfg(not(any(feature = "rustls", feature = "native-tls")))]
