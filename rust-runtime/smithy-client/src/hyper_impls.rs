@@ -1,6 +1,8 @@
 use crate::Builder;
 use smithy_http::body::SdkBody;
+use smithy_http::result::ClientError;
 pub use smithy_http::result::{SdkError, SdkSuccess};
+use std::error::Error;
 use tower::Service;
 
 /// Adapter from a [`hyper::Client`] to a connector useable by a [`Client`](crate::Client).
@@ -13,7 +15,7 @@ where
     C: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     type Response = http::Response<SdkBody>;
-    type Error = hyper::Error;
+    type Error = ClientError;
 
     #[allow(clippy::type_complexity)]
     type Future = std::pin::Pin<
@@ -24,13 +26,36 @@ where
         &mut self,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Result<(), Self::Error>> {
-        self.0.poll_ready(cx)
+        self.0.poll_ready(cx).map_err(to_client_error)
     }
 
     fn call(&mut self, req: http::Request<SdkBody>) -> Self::Future {
         let fut = self.0.call(req);
-        Box::pin(async move { Ok(fut.await?.map(SdkBody::from)) })
+        Box::pin(async move { Ok(fut.await.map_err(to_client_error)?.map(SdkBody::from)) })
     }
+}
+
+fn to_client_error(err: hyper::Error) -> ClientError {
+    if err.is_timeout() {
+        ClientError::timeout(err.into())
+    } else if err.is_user() {
+        ClientError::user(err.into())
+    } else if find_source::<std::io::Error>(&err).is_some() {
+        ClientError::io(err.into())
+    } else {
+        ClientError::other(err.into(), None)
+    }
+}
+
+fn find_source<'a, E: Error + 'static>(err: &'a (dyn Error + 'static)) -> Option<&'a E> {
+    let mut next = Some(err);
+    while let Some(err) = next {
+        if let Some(matching_err) = err.downcast_ref::<E>() {
+            return Some(matching_err);
+        }
+        next = err.source();
+    }
+    None
 }
 
 impl<C> From<hyper::Client<C, SdkBody>> for HyperAdapter<C> {
