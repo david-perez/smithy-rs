@@ -1,5 +1,5 @@
 [package]
-name = "smithy-server"
+name = "aws-smithy-server"
 version = "0.1.0"
 authors = ["Matteo Bigoi <matbigoi@amazon.com>", "David Perez <davidpz@amazon.com>"]
 edition = "2018"
