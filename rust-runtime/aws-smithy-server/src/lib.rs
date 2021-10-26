@@ -3,7 +3,9 @@ pub mod extractors;
 pub mod model;
 pub mod operation_registry;
 pub mod responders;
+pub mod service;
 
-// This module lives in a separate `aws-smithy-server` crate in the `smithy-rs` repo, and will
+// These modules live in a separate `aws-smithy-server` crate in the `smithy-rs` repo, and will
 // provide common stuff used by all services i.e. the code here is *not* model-specific.
+pub mod router;
 pub mod runtime;

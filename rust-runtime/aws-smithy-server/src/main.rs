@@ -2,10 +2,15 @@
 // What the user writes
 // ====================
 
-use aws_smithy_server::model::*;
+use std::sync::Arc;
+
 use aws_smithy_server::operation_registry::SimpleServiceOperationRegistryBuilder;
+use aws_smithy_server::router::Router;
 use aws_smithy_server::runtime::AwsRestJson1;
-use axum::Router;
+// use aws_smithy_server::service::SimpleService;
+use aws_smithy_server::{model::*, router::Handler};
+use http::{Request, Response, StatusCode};
+use hyper::service::make_service_fn;
 use simple::output;
 
 // Notice how this operation implementation does not return `Result<T, E>`, because the Smithy
@@ -21,9 +26,11 @@ async fn register_service_operation(
     Ok(RegisterServiceOutput(output::RegisterServiceOutput::builder().id(String::from("id")).build()))
 }
 
+static NOT_FOUND: &[u8] = b"Not Found";
+
 #[tokio::main]
 async fn main() {
-    let app: Router<axum::routing::BoxRoute> = SimpleServiceOperationRegistryBuilder::default()
+    let app: axum::Router<axum::routing::BoxRoute> = SimpleServiceOperationRegistryBuilder::default()
         // User builds a registry containing implementations to all the operations in the service.
         // These are async functions or async closures that take as input the operation's
         // input and return the operation's output.
@@ -40,7 +47,43 @@ async fn main() {
     // TODO How can they add layers per route? They can't modify the routes in the router to wrap
     // them in https://docs.rs/axum/0.2.8/axum/handler/trait.Handler.html#method.layer
 
-    let server = axum::Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
+    let routes: Vec<Box<dyn Handler>> = Vec::new();
+    let router = Arc::new(Router { routes });
+    // let service = SimpleService::new(router);
+
+    let make_service = make_service_fn(move |_| {
+        let router = Arc::clone(&router);
+
+        async move {
+            Ok::<_, std::convert::Infallible>(hyper::service::service_fn(move |mut req| {
+                let router = router.clone();
+
+                async move {
+                    let handler = router.find(&req);
+
+                    let out = handler.call(req).await;
+                    let result: Result<Response<hyper::Body>, std::convert::Infallible> = Ok(out);
+                    result
+                    // Ok::<_, std::convert::Infallible>(out)
+
+                    // Ok::<_, std::convert::Infallible>(
+                    //     Response::builder().status(StatusCode::NOT_FOUND).body(hyper::Body::from(NOT_FOUND)).unwrap(),
+                    // )
+                    // Ok::<_, std::convert::Infallible>(
+                    //     match router.find(&path) {
+                    //     Some((handler, params)) => {
+                    //         let p = params.iter().map(|p| (p.0.to_string(), p.1.to_string())).collect::<Params>();
+                    //         req.extensions_mut().insert(p);
+                    //         handler.call(req).await
+                    //     }
+                    //     None => Response::builder().status(StatusCode::NOT_FOUND).body(NOT_FOUND.into()).unwrap(),
+                    // })
+                }
+            }))
+        }
+    });
+
+    let server = axum::Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(make_service);
 
     // Run forever-ish...
     if let Err(err) = server.await {
