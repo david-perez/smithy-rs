@@ -9,6 +9,7 @@ use aws_smithy_server::router::Router;
 use aws_smithy_server::runtime::AwsRestJson1;
 // use aws_smithy_server::service::SimpleService;
 use aws_smithy_server::{model::*, router::Handler};
+use axum::body::BoxBody;
 use http::{Request, Response, StatusCode};
 use hyper::service::make_service_fn;
 use simple::output;
@@ -47,8 +48,10 @@ async fn main() {
     // TODO How can they add layers per route? They can't modify the routes in the router to wrap
     // them in https://docs.rs/axum/0.2.8/axum/handler/trait.Handler.html#method.layer
 
-    let routes: Vec<Box<dyn Handler>> = Vec::new();
+    // TODO Refactor init
+    let routes: Vec<Box<dyn Handler<hyper::Body>>> = Vec::new();
     let router = Arc::new(Router { routes });
+    // TODO Register routes
     // let service = SimpleService::new(router);
 
     let make_service = make_service_fn(move |_| {
@@ -62,7 +65,7 @@ async fn main() {
                     let handler = router.find(&req);
 
                     let out = handler.call(req).await;
-                    let result: Result<Response<hyper::Body>, std::convert::Infallible> = Ok(out);
+                    let result: Result<Response<BoxBody>, std::convert::Infallible> = Ok(out);
                     result
                     // Ok::<_, std::convert::Infallible>(out)
 
