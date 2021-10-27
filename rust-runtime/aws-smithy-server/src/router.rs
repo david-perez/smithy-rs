@@ -15,21 +15,6 @@ use hyper::Body;
 
 // The `Handler` trait in axum is sealed, so we can't implement it outside axum nor specify it as
 // the return type of our router; so here is our own take on that trait.
-pub trait Handler1: Send + Sync + 'static {
-    fn call<'a>(&'a self, req: Request<Body>) -> Pin<Box<dyn Future<Output = Response<Body>> + Send + 'a>>;
-}
-
-impl<F, R> Handler1 for F
-where
-    F: Send + Sync + 'static + Fn(Request<Body>) -> R,
-    R: Future<Output = Response<Body>> + Send + 'static,
-{
-    fn call<'a>(&'a self, req: Request<Body>) -> Pin<Box<dyn Future<Output = Response<Body>> + Send + 'a>> {
-        let fut = (self)(req);
-        Box::pin(async move { fut.await })
-    }
-}
-
 #[async_trait]
 pub trait Handler<B, I>: Send + Sync + 'static {
     /// Call the handler with the given request.
@@ -74,26 +59,8 @@ pub trait Router {
 
     async fn route_and_call<B>(self: &Self, req: Request<B>) -> Response<BoxBody>
     where
-        // R: Router + Send,
-        // H: Handler<B, I> + Send,
-        // I: FromRequest<B> + Send,
         B: Send + 'static;
 }
-
-// pub struct Router<T> {
-//     pub routes: Vec<T>,
-// }
-
-// impl<T> Router<T> {
-//     // TODO
-//     pub fn route() -> Self {
-//         unimplemented!()
-//     }
-
-//     pub fn find<B>(self: &Self, _request: &Request<B>) -> T {
-//         unimplemented!()
-//     }
-// }
 
 #[derive(Debug, Clone)]
 pub struct EmptyRouter;
@@ -101,8 +68,8 @@ pub struct EmptyRouter;
 #[async_trait]
 impl<H, R> Router for Route<H, R>
 where
+    H: Router + Send + Sync,
     R: Router + Send + Sync,
-    H: Send + Sync,
 {
     fn route() -> Self {
         todo!()
@@ -110,12 +77,12 @@ where
 
     async fn route_and_call<B>(self: &Self, req: Request<B>) -> Response<BoxBody>
     where
-        // R: Router + Send,
-        // H: Handler<B, I> + Send,
-        // I: FromRequest<B> + Send,
         B: Send + 'static,
     {
-        todo!()
+        self.handler.route_and_call(req).await
+        // if self.matches {
+        // } else {
+        // }
     }
 }
 
@@ -130,5 +97,17 @@ impl Router for EmptyRouter {
         B: Send + 'static,
     {
         todo!()
+    }
+}
+
+#[async_trait]
+impl<B, T, H, R> Handler<B, T> for Route<H, R>
+where
+    H: Handler<B, T>,
+    R: Send + Sync + 'static,
+    B: Send + 'static,
+{
+    async fn call(&self, req: Request<B>) -> Response<BoxBody> {
+        self.handler.call(req).await
     }
 }
