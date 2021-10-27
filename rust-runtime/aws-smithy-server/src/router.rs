@@ -2,6 +2,7 @@
 use async_trait::async_trait;
 use axum::{
     body::{box_body, BoxBody},
+    extract::{FromRequest, RequestParts},
     response::IntoResponse,
 };
 use std::pin::Pin;
@@ -30,51 +31,104 @@ where
 }
 
 #[async_trait]
-pub trait Handler<B>: Send + Sync + 'static {
+pub trait Handler<B, I>: Send + Sync + 'static {
     /// Call the handler with the given request.
     async fn call(&self, req: Request<B>) -> Response<BoxBody>;
 }
 
+// For multiple arguments, `I` can be a tuple.
 #[async_trait]
-impl<F, Fut, B, Res> Handler<B> for F
+impl<F, Fut, B, Res, I> Handler<B, I> for F
 where
     // TODO Ideally I want `FnOnce` here but that would require taking ownership of `self`. axum
-    // does it by cloning.
-    F: Fn() -> Fut + Send + Sync + 'static,
+    // does it by requiring `Clone` (which is automatically implemented by function pointers, so I
+    // guess it's ok).
+    F: Fn(I) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = Res> + Send,
     Res: IntoResponse,
     B: Send + 'static,
+    I: FromRequest<B> + Send,
 {
-    async fn call(&self, _req: Request<B>) -> Response<BoxBody> {
-        self().await.into_response().map(box_body)
+    async fn call(&self, req: Request<B>) -> Response<BoxBody> {
+        let mut req = RequestParts::new(req);
+
+        let input = match I::from_request(&mut req).await {
+            Ok(value) => value,
+            Err(rejection) => return rejection.into_response().map(box_body),
+        };
+
+        self(input).await.into_response().map(box_body)
     }
 }
 
-pub struct Router<T> {
-    pub routes: Vec<T>,
+#[derive(Debug, Clone)]
+pub struct Route<H, R> {
+    pub matches: bool,
+    pub handler: H,
+    pub next_route: R,
 }
 
-impl<T> Router<T> {
-    // TODO
-    pub fn route() -> Self {
-        unimplemented!()
+#[async_trait]
+pub trait Router {
+    fn route() -> Self;
+
+    async fn route_and_call<B>(self: &Self, req: Request<B>) -> Response<BoxBody>
+    where
+        // R: Router + Send,
+        // H: Handler<B, I> + Send,
+        // I: FromRequest<B> + Send,
+        B: Send + 'static;
+}
+
+// pub struct Router<T> {
+//     pub routes: Vec<T>,
+// }
+
+// impl<T> Router<T> {
+//     // TODO
+//     pub fn route() -> Self {
+//         unimplemented!()
+//     }
+
+//     pub fn find<B>(self: &Self, _request: &Request<B>) -> T {
+//         unimplemented!()
+//     }
+// }
+
+#[derive(Debug, Clone)]
+pub struct EmptyRouter;
+
+#[async_trait]
+impl<H, R> Router for Route<H, R>
+where
+    R: Router + Send + Sync,
+    H: Send + Sync,
+{
+    fn route() -> Self {
+        todo!()
     }
 
-    // pub fn find<B>(
-    //     self: &Self,
-    //     request: &Request<B>,
-    // ) -> Box<
-    //     dyn Service<
-    //         Request<B>,
-    //         Response = Response<BoxBody>,
-    //         Error = Infallible,
-    //         Future = Pin<Box<dyn Future<Output = Result<Response<BoxBody>, Infallible>> + Send + 'static>>,
-    //     >,
-    // > {
-    //     unimplemented!()
-    // }
+    async fn route_and_call<B>(self: &Self, req: Request<B>) -> Response<BoxBody>
+    where
+        // R: Router + Send,
+        // H: Handler<B, I> + Send,
+        // I: FromRequest<B> + Send,
+        B: Send + 'static,
+    {
+        todo!()
+    }
+}
 
-    pub fn find<B>(self: &Self, _request: &Request<B>) -> T {
-        unimplemented!()
+#[async_trait]
+impl Router for EmptyRouter {
+    fn route() -> Self {
+        todo!()
+    }
+
+    async fn route_and_call<B>(self: &Self, _req: Request<B>) -> Response<BoxBody>
+    where
+        B: Send + 'static,
+    {
+        todo!()
     }
 }

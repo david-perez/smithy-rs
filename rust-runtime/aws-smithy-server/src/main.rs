@@ -5,11 +5,12 @@
 use std::sync::Arc;
 
 use aws_smithy_server::operation_registry::SimpleServiceOperationRegistryBuilder;
-use aws_smithy_server::router::Router;
+use aws_smithy_server::router::{EmptyRouter, Route, Router};
 use aws_smithy_server::runtime::AwsRestJson1;
 // use aws_smithy_server::service::SimpleService;
 use aws_smithy_server::{model::*, router::Handler};
 use axum::body::BoxBody;
+use axum::extract::FromRequest;
 use http::{Request, Response, StatusCode};
 use hyper::service::make_service_fn;
 use simple::output;
@@ -48,9 +49,20 @@ async fn main() {
     // TODO How can they add layers per route? They can't modify the routes in the router to wrap
     // them in https://docs.rs/axum/0.2.8/axum/handler/trait.Handler.html#method.layer
 
+    // Why can't I have sub-linear routing? It would require us to have a "container" of routes
+    // mapping requests to handlers, e.g. something like:
+    //
+    // ```
+    // let routes: Vec<Box<dyn Handler<hyper::Body, Box<dyn FromRequest<hyper::Body>>>>> = Vec::new();
+    // ```
+    //
+    // But `Handler`'s second generic argument has to be something that implements `FromRequest`,
+    // which is `Sized`, and as such cannot be used as a trait object. And that is a blocker; we do
+    // need `dyn` here, since each handler takes in _different_ types that implement `FromRequest`.
+
     // TODO Refactor init
-    let routes: Vec<Box<dyn Handler<hyper::Body>>> = Vec::new();
-    let router = Arc::new(Router { routes });
+    let router = Arc::new(EmptyRouter {});
+    // let router = Arc::new(Route { matches: false, handler: 5, next_route: 6 });
     // TODO Register routes
     // let service = SimpleService::new(router);
 
@@ -62,9 +74,9 @@ async fn main() {
                 let router = router.clone();
 
                 async move {
-                    let handler = router.find(&req);
+                    let out = router.route_and_call(req).await;
 
-                    let out = handler.call(req).await;
+                    // let out = handler.call(req).await;
                     let result: Result<Response<BoxBody>, std::convert::Infallible> = Ok(out);
                     result
                     // Ok::<_, std::convert::Infallible>(out)
