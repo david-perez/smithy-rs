@@ -11,7 +11,7 @@ Server runtime for Smithy Rust Server Framework
 simple = { path = "../../codegen-server-test/build/smithyprojections/codegen-server-test/simple/rust-server-codegen/" }
 
 async-trait = "0.1"
-axum = "0.2"
+axum = {path = "../../../axum"}
 bytes = "1.1"
 derive_builder = "0.10"
 eyre = "0.6"

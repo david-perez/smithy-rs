@@ -4,7 +4,7 @@
 
 use crate::model::*;
 use crate::runtime::AwsRestJson1;
-use axum::{handler::get, Router};
+use axum::{routing::get, routing::uri_spec::UriSpec, Router};
 use derive_builder::Builder;
 use std::future::Future;
 // use std::marker::PhantomData;
@@ -42,7 +42,7 @@ where
 // Auto-generated depending on Smithy protocol.
 // TODO What happens if a Smithy service definition supports more than one protocol?
 // This doesn't violate coherence because we control the Cx, Futx type parameters.
-impl<C1, Fut1, C2, Fut2> From<SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>> for Router<axum::routing::BoxRoute>
+impl<C1, Fut1, C2, Fut2> From<SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>> for Router
 where
     C1: FnOnce(HealthcheckInput) -> Fut1 + Clone + Send + Sync + 'static,
     Fut1: Future<Output = HealthcheckOutput> + Send,
@@ -52,9 +52,12 @@ where
     fn from(registry: SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>) -> Self {
         // fun(registry.register_service);
 
-        Router::new()
-            .route("/healthcheck", get(registry.health_check))
-            .route("/register_service", get(registry.register_service))
-            .boxed()
+        let uri_spec = UriSpec::always();
+        let uri_spec2 = UriSpec::always();
+
+        let router =
+            Router::new().route(get(registry.health_check), uri_spec).route(get(registry.register_service), uri_spec2);
+
+        router
     }
 }
