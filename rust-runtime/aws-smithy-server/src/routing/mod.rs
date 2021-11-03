@@ -1,22 +1,17 @@
 use self::not_found::NotFound;
 use self::{future::RouterFuture, request_spec::RequestSpec};
 use crate::{
-    body::{box_body, Body, BoxBody},
+    body::{Body, BoxBody},
     util::{ByteStr, PercentDecodedByteStr},
 };
-use bytes::Bytes;
-use http::{Request, Response, StatusCode, Uri};
+use http::{Request, Response};
 use std::{
-    borrow::Cow,
     collections::HashMap,
     convert::Infallible,
     fmt,
-    sync::Arc,
     task::{Context, Poll},
 };
-use tower::{util::ServiceExt, ServiceBuilder};
-use tower_http::map_response_body::MapResponseBodyLayer;
-use tower_layer::Layer;
+use tower::{util::ServiceExt};
 use tower_service::Service;
 
 mod not_found;
@@ -25,11 +20,8 @@ pub mod future;
 pub mod request_spec;
 pub mod method_router;
 mod into_make_service;
-mod method_not_allowed;
 
 pub use self::{into_make_service::IntoMakeService, route::Route};
-// TODO I think this should be public.
-pub(crate) use self::method_not_allowed::MethodNotAllowed;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct RouteId(u64);
@@ -142,14 +134,12 @@ where
     }
 
     #[inline]
-    fn call(&mut self, mut req: Request<B>) -> Self::Future {
+    fn call(&mut self, req: Request<B>) -> Self::Future {
         // TODO Do we need this?
         // if req.extensions().get::<OriginalUri>().is_none() {
         //     let original_uri = OriginalUri(req.uri().clone());
         //     req.extensions_mut().insert(original_uri);
         // }
-
-        let path = req.uri().path().to_string();
 
         for (_, route) in self.routes.iter() {
             match route.matches(&req) {

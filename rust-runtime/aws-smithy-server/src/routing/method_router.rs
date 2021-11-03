@@ -45,10 +45,10 @@ where
     }
 
     fn call(&mut self, req: Request<B>) -> Self::Future {
-        let req_method = req.method().clone();
         let handler_clone = self.handler.clone();
 
-        // Ugly code to convert `Response<axum::body::BoxBody>` to `Reponse<crate::body::BoxBody>`.
+        // Ugly code to convert `Response<axum::body::BoxBody>` to
+        // `Response<crate::body::BoxBody>`.
         let fut = async {
             let resp = Handler::call(handler_clone, req).await;
             let resp = resp.map(|b| box_body(b));
