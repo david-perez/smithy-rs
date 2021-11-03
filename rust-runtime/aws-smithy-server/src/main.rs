@@ -8,7 +8,7 @@ use aws_smithy_server::operation_registry::SimpleServiceOperationRegistryBuilder
 use aws_smithy_server::runtime::AwsRestJson1;
 // use aws_smithy_server::service::SimpleService;
 use aws_smithy_server::model::*;
-use axum::Router;
+use aws_smithy_server::routing::Router;
 // use http::{Request, Response, StatusCode};
 // use hyper::service::make_service_fn;
 use simple::output;

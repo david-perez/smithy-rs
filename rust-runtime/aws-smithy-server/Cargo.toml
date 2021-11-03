@@ -16,16 +16,23 @@ bytes = "1.1"
 derive_builder = "0.10"
 eyre = "0.6"
 futures = "0.3"
+# TODO Audit
+futures-util = { version = "0.3", default-features = false, features = ["alloc"] }
 http = "0.2"
 http-body = "0.4"
 hyper = { version = "0.14", features = ["server", "http1", "http2", "tcp"] }
 lazy_static = "1.4"
 mime = "0.3"
 parking_lot = "0.11"
+pin-project-lite = "0.2.7"
+percent-encoding = "2.1"
 regex = "1.0"
+# TODO Can we rely on `percent-encoding` instead?
+serde_urlencoded = "0.7"
 thiserror = "1"
 tokio = { version = "1.0", features = ["full"] }
 tower = { version = "0.4", features = ["full"] }
+tower-layer = "0.3"
 tower-http = { version = "0.1", features = ["trace"] }
 tower-service = "0.3"
 tracing = "0.1"

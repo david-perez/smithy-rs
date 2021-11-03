@@ -3,8 +3,8 @@
 // =============================
 
 use crate::model::*;
+use crate::routing::{method_router::operation, request_spec::RequestSpec, Router};
 use crate::runtime::AwsRestJson1;
-use axum::{routing::get, routing::uri_spec::UriSpec, Router};
 use derive_builder::Builder;
 use std::future::Future;
 // use std::marker::PhantomData;
@@ -52,11 +52,12 @@ where
     fn from(registry: SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>) -> Self {
         // fun(registry.register_service);
 
-        let uri_spec = UriSpec::always();
-        let uri_spec2 = UriSpec::always();
+        let request_spec = RequestSpec::always_get();
+        let request_spec2 = RequestSpec::always_get();
 
-        let router =
-            Router::new().route(get(registry.health_check), uri_spec).route(get(registry.register_service), uri_spec2);
+        let router = Router::new()
+            .route(request_spec, operation(registry.health_check))
+            .route(request_spec2, operation(registry.register_service));
 
         router
     }

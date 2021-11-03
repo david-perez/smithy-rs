@@ -7,5 +7,18 @@ pub mod service;
 
 // These modules live in a separate `aws-smithy-server` crate in the `smithy-rs` repo, and will
 // provide common stuff used by all services i.e. the code here is *not* model-specific.
-pub mod router;
+#[macro_use]
+pub(crate) mod macros;
+
+pub mod body;
+mod clone_box_service;
+mod error;
+pub mod routing;
 pub mod runtime;
+mod util;
+
+#[doc(inline)]
+pub use self::{error::Error, routing::Router};
+
+/// Alias for a type-erased error type.
+pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
