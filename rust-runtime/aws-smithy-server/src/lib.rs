@@ -20,3 +20,6 @@ pub use self::{error::Error, routing::Router};
 
 /// Alias for a type-erased error type.
 pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
+
+#[cfg(test)]
+mod test_helpers;
