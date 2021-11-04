@@ -95,19 +95,22 @@ where
 
     #[inline]
     fn call(&mut self, req: Request<B>) -> Self::Future {
+        let mut method_not_allowed = false;
+
         for route in &self.routes {
             match route.matches(&req) {
                 request_spec::Match::Yes => {
                     return RouterFuture::from_oneshot(route.clone().oneshot(req));
                 }
-                request_spec::Match::No => todo!(),
-                request_spec::Match::MethodNotAllowed => todo!(),
+                request_spec::Match::MethodNotAllowed => method_not_allowed = true,
+                request_spec::Match::No => {
+                    // continue
+                }
             }
         }
 
-        RouterFuture::from_response(
-            Response::builder().status(StatusCode::NOT_FOUND).body(crate::body::empty()).unwrap(),
-        )
+        let status_code = if method_not_allowed { StatusCode::METHOD_NOT_ALLOWED } else { StatusCode::NOT_FOUND };
+        RouterFuture::from_response(Response::builder().status(status_code).body(crate::body::empty()).unwrap())
     }
 }
 
