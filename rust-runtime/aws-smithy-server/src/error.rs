@@ -1,7 +1,7 @@
 use crate::BoxError;
 use std::{error::Error as StdError, fmt};
 
-/// Errors that can happen when using axum.
+/// Errors that can happen when using `aws-smithy-server`.
 #[derive(Debug)]
 pub struct Error {
     inner: BoxError,
@@ -10,16 +10,6 @@ pub struct Error {
 impl Error {
     pub(crate) fn new(error: impl Into<BoxError>) -> Self {
         Self { inner: error.into() }
-    }
-
-    pub(crate) fn downcast<T>(self) -> Result<T, Self>
-    where
-        T: StdError + 'static,
-    {
-        match self.inner.downcast::<T>() {
-            Ok(t) => Ok(*t),
-            Err(err) => Err(*err.downcast().unwrap()),
-        }
     }
 }
 

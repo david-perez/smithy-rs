@@ -36,7 +36,6 @@ impl<B> Route<B> {
     }
 }
 
-// TODO: Why not derive Clone?
 impl<ReqBody> Clone for Route<ReqBody> {
     fn clone(&self) -> Self {
         Self { service: self.service.clone(), request_spec: self.request_spec.clone() }

@@ -15,7 +15,6 @@ mod clone_box_service;
 mod error;
 pub mod routing;
 pub mod runtime;
-mod util;
 
 #[doc(inline)]
 pub use self::{error::Error, routing::Router};

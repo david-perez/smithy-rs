@@ -1,25 +1,20 @@
-use self::not_found::NotFound;
 use self::{future::RouterFuture, request_spec::RequestSpec};
-use crate::{
-    body::{Body, BoxBody},
-    util::{ByteStr, PercentDecodedByteStr},
-};
+use crate::body::{Body, BoxBody};
 use http::{Request, Response};
 use std::{
     collections::HashMap,
     convert::Infallible,
-    fmt,
     task::{Context, Poll},
 };
-use tower::{util::ServiceExt};
+use tower::util::ServiceExt;
 use tower_service::Service;
 
-mod not_found;
-mod route;
 pub mod future;
-pub mod request_spec;
-pub mod method_router;
 mod into_make_service;
+pub mod method_router;
+mod not_found;
+pub mod request_spec;
+mod route;
 
 pub use self::{into_make_service::IntoMakeService, route::Route};
 
@@ -34,66 +29,47 @@ impl RouteId {
     }
 }
 
+#[derive(Debug)]
 pub struct Router<B = Body> {
     routes: HashMap<RouteId, Route<B>>,
-    fallback: Fallback<B>,
 }
 
 impl<B> Clone for Router<B> {
     fn clone(&self) -> Self {
-        Self {
-            routes: self.routes.clone(),
-            fallback: self.fallback.clone(),
-        }
+        Self { routes: self.routes.clone() }
     }
 }
 
 impl<B> Default for Router<B>
 where
-    B: Send + Sync + 'static,
+    B: Send + 'static,
 {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<B> fmt::Debug for Router<B> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Router")
-            .field("routes", &self.routes)
-            .field("fallback", &self.fallback)
-            .finish()
-    }
-}
-
 impl<B> Router<B>
 where
-    B: Send + Sync + 'static,
+    B: Send + 'static,
 {
     /// Create a new `Router`.
     ///
     /// Unless you add additional routes this will respond to `404 Not Found` to
     /// all requests.
     pub fn new() -> Self {
-        Self {
-            routes: Default::default(),
-            fallback: Fallback::Default(Route::new(NotFound, RequestSpec::always_get())),
-        }
+        Self { routes: Default::default() }
     }
 
     /// Add a route to the router.
     pub fn route<T>(mut self, request_spec: RequestSpec, svc: T) -> Self
     where
-        T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible>
-            + Clone
-            + Send
-            + 'static,
+        T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible> + Clone + Send + 'static,
         T::Future: Send + 'static,
     {
-        // TODO
         let svc = match try_downcast::<Router<B>, _>(svc) {
             Ok(_) => {
-                panic!("Invalid route: `Router::route` cannot be used with `Router`s. Use `Router::nest` instead")
+                panic!("Invalid route: `Router::route` cannot be used with `Router`s.")
             }
             Err(svc) => svc,
         };
@@ -153,85 +129,6 @@ where
 
         // TODO Return `404 Not Found`.
         todo!();
-    }
-}
-
-// TODO Remove
-// We store the potential error here such that users can handle invalid path
-// params using `Result<Path<T>, _>`. That wouldn't be possible if we
-// returned an error immediately when decoding the param
-pub(crate) struct UrlParams(
-    pub(crate) Result<Vec<(ByteStr, PercentDecodedByteStr)>, InvalidUtf8InPathParam>,
-);
-
-fn insert_url_params<B>(req: &mut Request<B>, params: Vec<(String, String)>) {
-    let params = params
-        .into_iter()
-        .map(|(k, v)| {
-            if let Some(decoded) = PercentDecodedByteStr::new(v) {
-                Ok((ByteStr::new(k), decoded))
-            } else {
-                Err(InvalidUtf8InPathParam {
-                    key: ByteStr::new(k),
-                })
-            }
-        })
-        .collect::<Result<Vec<_>, _>>();
-
-    if let Some(current) = req.extensions_mut().get_mut::<Option<UrlParams>>() {
-        match params {
-            Ok(params) => {
-                let mut current = current.take().unwrap();
-                if let Ok(current) = &mut current.0 {
-                    current.extend(params);
-                }
-                req.extensions_mut().insert(Some(current));
-            }
-            Err(err) => {
-                req.extensions_mut().insert(Some(UrlParams(Err(err))));
-            }
-        }
-    } else {
-        req.extensions_mut().insert(Some(UrlParams(params)));
-    }
-}
-
-pub(crate) struct InvalidUtf8InPathParam {
-    pub(crate) key: ByteStr,
-}
-
-enum Fallback<B> {
-    Default(Route<B>),
-    Custom(Route<B>),
-}
-
-impl<B> Clone for Fallback<B> {
-    fn clone(&self) -> Self {
-        match self {
-            Fallback::Default(inner) => Fallback::Default(inner.clone()),
-            Fallback::Custom(inner) => Fallback::Custom(inner.clone()),
-        }
-    }
-}
-
-impl<B> fmt::Debug for Fallback<B> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Default(inner) => f.debug_tuple("Default").field(inner).finish(),
-            Self::Custom(inner) => f.debug_tuple("Custom").field(inner).finish(),
-        }
-    }
-}
-
-impl<B> Fallback<B> {
-    fn map<F, B2>(self, f: F) -> Fallback<B2>
-    where
-        F: FnOnce(Route<B>) -> Route<B2>,
-    {
-        match self {
-            Fallback::Default(inner) => Fallback::Default(f(inner)),
-            Fallback::Custom(inner) => Fallback::Custom(f(inner)),
-        }
     }
 }
 
