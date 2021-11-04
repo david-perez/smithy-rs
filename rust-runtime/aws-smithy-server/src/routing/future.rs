@@ -23,6 +23,6 @@ impl<B> RouterFuture<B> {
     }
 
     pub(super) fn from_response(response: Response<BoxBody>) -> Self {
-        RouterFuture::new(Either::Right(ready(Ok(response))))
+        Self::new(Either::Right(ready(Ok(response))))
     }
 }

@@ -1,6 +1,6 @@
 use self::{future::RouterFuture, request_spec::RequestSpec};
 use crate::body::{Body, BoxBody};
-use http::{Request, Response};
+use http::{Request, Response, StatusCode};
 use std::{
     convert::Infallible,
     task::{Context, Poll},
@@ -10,7 +10,6 @@ use tower_service::Service;
 
 pub mod future;
 mod into_make_service;
-mod not_found;
 pub mod operation_handler;
 pub mod request_spec;
 mod route;
@@ -106,8 +105,9 @@ where
             }
         }
 
-        // TODO Return `404 Not Found`.
-        todo!();
+        RouterFuture::from_response(
+            Response::builder().status(StatusCode::NOT_FOUND).body(crate::body::empty()).unwrap(),
+        )
     }
 }
 
