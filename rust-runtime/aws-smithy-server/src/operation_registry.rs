@@ -3,7 +3,7 @@
 // =============================
 
 use crate::model::*;
-use crate::routing::{method_router::operation, request_spec::RequestSpec, Router};
+use crate::routing::{operation_handler::operation, request_spec::RequestSpec, Router};
 use crate::runtime::AwsRestJson1;
 use derive_builder::Builder;
 use std::future::Future;

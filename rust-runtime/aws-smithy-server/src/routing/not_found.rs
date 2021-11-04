@@ -7,11 +7,11 @@ use std::{
 };
 use tower_service::Service;
 
-/// A [`Service`] that responds with `405 Method not allowed` to all requests.
+/// A [`Service`] that responds with `404 Method Not Found` to all requests.
 ///
-/// This is used as the bottom service in a method router.
+/// This is used as the bottom service in the router.
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct NotFound;
+pub(super) struct NotFound;
 
 impl<B> Service<Request<B>> for NotFound
 where

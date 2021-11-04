@@ -10,12 +10,14 @@ use std::{
 };
 use tower_service::Service;
 
-pub struct MethodRouter<H, B, T> {
-    pub(crate) handler: H,
-    pub(crate) _marker: PhantomData<fn() -> (B, T)>,
+/// Struct that holds a handler, that is, a function provided by the user that implements the
+/// Smithy operation.
+pub struct OperationHandler<H, B, T> {
+    handler: H,
+    _marker: PhantomData<fn() -> (B, T)>,
 }
 
-impl<H, B, T> Clone for MethodRouter<H, B, T>
+impl<H, B, T> Clone for OperationHandler<H, B, T>
 where
     H: Clone,
 {
@@ -24,19 +26,20 @@ where
     }
 }
 
-pub fn operation<H, B, T>(handler: H) -> MethodRouter<H, B, T> {
-    MethodRouter { handler, _marker: PhantomData }
+/// Construct an [`OperationHandler`] out of a function implementing the operation.
+pub fn operation<H, B, T>(handler: H) -> OperationHandler<H, B, T> {
+    OperationHandler { handler, _marker: PhantomData }
 }
 
-impl<H, B, T> Service<Request<B>> for MethodRouter<H, B, T>
+impl<H, B, T> Service<Request<B>> for OperationHandler<H, B, T>
 where
     H: Handler<B, T>,
     B: Send + 'static,
 {
     type Response = Response<BoxBody>;
     type Error = Infallible;
-    // TODO Use `pin_project`.
-    // TODO Is axum's future `Send`?
+    // TODO Use `opaque_future!` and `pin_project`.
+    // TODO Is `axum`'s future `Send`?
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     #[inline]

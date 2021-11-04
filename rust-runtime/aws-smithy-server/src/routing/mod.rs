@@ -10,8 +10,8 @@ use tower_service::Service;
 
 pub mod future;
 mod into_make_service;
-pub mod method_router;
 mod not_found;
+pub mod operation_handler;
 pub mod request_spec;
 mod route;
 
