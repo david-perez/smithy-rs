@@ -31,37 +31,19 @@ async fn register_service_operation(
 #[tokio::main]
 async fn main() {
     let app: Router = SimpleServiceOperationRegistryBuilder::default()
-        // User builds a registry containing implementations to all the operations in the service.
-        // These are async functions or async closures that take as input the operation's
-        // input and return the operation's output.
+        // Build a registry containing implementations to all the operations in the service.  These
+        // are async functions or async closures that take as input the operation's input and
+        // return the operation's output.
         .health_check(healthcheck_operation)
         .register_service(register_service_operation)
         .build()
         .unwrap()
-        // Convert it into an axum router that will route requests to the matching operation
+        // Convert it into a router that will route requests to the matching operation
         // implementation.
         .into();
 
-    // User has the ability to modify app if they desire.
-    // They can add layers to **all** routes.
-    // TODO How can they add layers per route? They can't modify the routes in the router to wrap
-    // them in https://docs.rs/axum/0.2.8/axum/handler/trait.Handler.html#method.layer
-
-    // Why can't I have sub-linear routing? It would require us to have a "container" of routes
-    // mapping requests to handlers, e.g. something like:
+    // TODO Allow users to add Tower layers to the `Router`.
     //
-    // ```
-    // let routes: Vec<Box<dyn Handler<hyper::Body, Box<dyn FromRequest<hyper::Body>>>>> = Vec::new();
-    // ```
-    //
-    // But `Handler`'s second generic argument has to be something that implements `FromRequest`,
-    // which is `Sized`, and as such cannot be used as a trait object. And that is a blocker; we do
-    // need `dyn` here, since each handler takes in _different_ types that implement `FromRequest`.
-
-    // let router = Arc::new(Router::new());
-    // let router = Arc::new(Route { matches: false, handler: 5, next_route: 6 });
-    // let service = SimpleService::new(router);
-
     // let make_service = make_service_fn(move |_| {
     //     let router = Arc::clone(&router);
 

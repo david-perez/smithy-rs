@@ -2,7 +2,6 @@ use self::{future::RouterFuture, request_spec::RequestSpec};
 use crate::body::{Body, BoxBody};
 use http::{Request, Response};
 use std::{
-    collections::HashMap,
     convert::Infallible,
     task::{Context, Poll},
 };
@@ -18,20 +17,9 @@ mod route;
 
 pub use self::{into_make_service::IntoMakeService, route::Route};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct RouteId(u64);
-
-impl RouteId {
-    fn next() -> Self {
-        use std::sync::atomic::{AtomicU64, Ordering};
-        static ID: AtomicU64 = AtomicU64::new(0);
-        Self(ID.fetch_add(1, Ordering::SeqCst))
-    }
-}
-
 #[derive(Debug)]
 pub struct Router<B = Body> {
-    routes: HashMap<RouteId, Route<B>>,
+    routes: Vec<Route<B>>,
 }
 
 impl<B> Clone for Router<B> {
@@ -74,10 +62,7 @@ where
             Err(svc) => svc,
         };
 
-        let id = RouteId::next();
-
-        self.routes.insert(id, Route::new(svc, request_spec));
-
+        self.routes.push(Route::new(svc, request_spec));
         self
     }
 
@@ -88,7 +73,7 @@ where
     /// response is another service.
     ///
     /// This is useful when running your application with hyper's
-    /// [`Server`](hyper::server::Server):
+    /// [`Server`](hyper::server::Server).
     ///
     /// [`MakeService`]: tower::make::MakeService
     pub fn into_make_service(self) -> IntoMakeService<Self> {
@@ -98,7 +83,7 @@ where
 
 impl<B> Service<Request<B>> for Router<B>
 where
-    B: Send + Sync + 'static,
+    B: Send + 'static,
 {
     type Response = Response<BoxBody>;
     type Error = Infallible;
@@ -111,13 +96,7 @@ where
 
     #[inline]
     fn call(&mut self, req: Request<B>) -> Self::Future {
-        // TODO Do we need this?
-        // if req.extensions().get::<OriginalUri>().is_none() {
-        //     let original_uri = OriginalUri(req.uri().clone());
-        //     req.extensions_mut().insert(original_uri);
-        // }
-
-        for (_, route) in self.routes.iter() {
+        for route in &self.routes {
             match route.matches(&req) {
                 request_spec::Match::Yes => {
                     return RouterFuture::from_oneshot(route.clone().oneshot(req));
