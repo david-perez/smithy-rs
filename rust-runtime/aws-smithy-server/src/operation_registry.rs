@@ -3,6 +3,7 @@
 // =============================
 
 use crate::model::*;
+use crate::routing::request_spec::{PathAndQuerySpec, PathSegment, PathSpec, QuerySegment, UriSpec};
 use crate::routing::{operation_handler::operation, request_spec::RequestSpec, Router};
 use crate::runtime::AwsRestJson1;
 use derive_builder::Builder;
@@ -52,13 +53,44 @@ where
     fn from(registry: SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>) -> Self {
         // fun(registry.register_service);
 
-        let request_spec = RequestSpec::always_get();
-        let request_spec2 = RequestSpec::always_get();
+        // `http localhost:8080/path/to/label/healthcheck`
+        let health_check_request_spec = RequestSpec::new(
+            http::Method::GET,
+            UriSpec {
+                host_prefix: None,
+                path_and_query: PathAndQuerySpec {
+                    path_segments: PathSpec(vec![
+                        PathSegment::Literal(String::from("path")),
+                        PathSegment::Literal(String::from("to")),
+                        PathSegment::Label,
+                        PathSegment::Literal(String::from("healthcheck")),
+                    ]),
+                    query_segments: vec![],
+                },
+            },
+        );
 
-        let router = Router::new()
-            .route(request_spec, operation(registry.health_check))
-            .route(request_spec2, operation(registry.register_service));
+        // `http "localhost:8080/register-service/gre/ee/dy/suffix?key&foo=bar"`
+        let register_service_request_spec = RequestSpec::new(
+            http::Method::POST,
+            UriSpec {
+                host_prefix: None,
+                path_and_query: PathAndQuerySpec {
+                    path_segments: PathSpec(vec![
+                        PathSegment::Literal(String::from("register-service")),
+                        PathSegment::Greedy,
+                        PathSegment::Literal(String::from("suffix")),
+                    ]),
+                    query_segments: vec![
+                        QuerySegment::Key(String::from("key")),
+                        QuerySegment::KeyValue(String::from("foo"), String::from("bar")),
+                    ],
+                },
+            },
+        );
 
-        router
+        Router::new()
+            .route(health_check_request_spec, operation(registry.health_check))
+            .route(register_service_request_spec, operation(registry.register_service))
     }
 }

@@ -27,22 +27,22 @@ pub enum HostPrefixSegment {
 // TODO The struct does not prevent us from adding multiple greedy labels, or not putting greedy
 // labels last.
 #[derive(Debug, Clone, Default)]
-pub struct PathSpec(Vec<PathSegment>);
+pub struct PathSpec(pub Vec<PathSegment>);
 
 pub type QuerySpec = Vec<QuerySegment>;
 
 #[derive(Debug, Clone, Default)]
 pub struct PathAndQuerySpec {
-    path_segments: PathSpec,
-    query_segments: QuerySpec,
+    pub path_segments: PathSpec,
+    pub query_segments: QuerySpec,
 }
 
 #[derive(Debug, Clone, Builder)]
 pub struct UriSpec {
     #[builder(default)]
-    host_prefix: Option<Vec<HostPrefixSegment>>,
+    pub host_prefix: Option<Vec<HostPrefixSegment>>,
     #[builder(default)]
-    path_and_query: PathAndQuerySpec,
+    pub path_and_query: PathAndQuerySpec,
 }
 
 #[derive(Debug, Clone)]
@@ -72,12 +72,16 @@ impl From<&PathSpec> for Regex {
             .iter()
             .map(|segment_spec| match segment_spec {
                 PathSegment::Literal(literal) => literal,
-                PathSegment::Label => "[^/]",
+                // TODO Should we allow empty segments as valid and pass `""` as the captured
+                // label?
+                // TODO URL spec says it should be ASCII but this regex accepts UTF-8:
+                // https://url.spec.whatwg.org/#url-representation
+                PathSegment::Label => "[^/]+",
                 PathSegment::Greedy => ".*",
             })
             .fold(String::new(), |a, b| a + sep + b);
 
-        Regex::new(&format!("{}{}{}", sep, re, sep)).unwrap()
+        Regex::new(&format!("{}$", re)).unwrap()
     }
 }
 
@@ -312,9 +316,7 @@ mod tests {
     #[tokio::test]
     async fn test_always_get() {
         let request_spec = RequestSpec::always_get();
-
         let request = Request::builder().method("GET").uri("https://www.rust-lang.org/").body(()).unwrap();
-
         request_spec.matches(&request);
     }
 }
