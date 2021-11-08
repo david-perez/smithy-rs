@@ -54,5 +54,9 @@ class ServerServiceGenerator(
                 }
             }
         }
+        rustCrate.withModule(RustModule.public("operation_registry", "A registry of your service's operations.")) { writer ->
+            OperationRegistryGenerator(context.model, context.symbolProvider, operations)
+                .render(writer)
+        }
     }
 }
