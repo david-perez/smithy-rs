@@ -9,7 +9,9 @@ pub struct Error {
 
 impl Error {
     pub(crate) fn new(error: impl Into<BoxError>) -> Self {
-        Self { inner: error.into() }
+        Self {
+            inner: error.into(),
+        }
     }
 }
 

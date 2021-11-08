@@ -52,8 +52,10 @@ where
         }
         if let Some(captures) = RE.captures(req.uri().path()) {
             if let Some(m) = captures.name("id") {
-                input = input
-                    .set_id(operation_deser::deser_label_register_service_input_id(m.as_str()).map_err(|_| rejection)?);
+                input = input.set_id(
+                    operation_deser::deser_label_register_service_input_id(m.as_str())
+                        .map_err(|_| rejection)?,
+                );
             }
         }
 
@@ -66,7 +68,8 @@ where
         // contiguous buffer, like the Serde ones. But I think that's not easy.
         let bytes = hyper::body::to_bytes(body).await.map_err(|_| rejection)?;
 
-        input = json_deser::deser_structure_crate_input_register_service_input(&bytes, input).map_err(|_| rejection)?;
+        input = json_deser::deser_structure_crate_input_register_service_input(&bytes, input)
+            .map_err(|_| rejection)?;
 
         let value = input
             .build()
@@ -93,6 +96,8 @@ where
     async fn from_request(_req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
         // TODO Why do builders for input structs return `Result<T, E>` but those for output
         // structs return `Result<T>`?
-        Ok(HealthcheckInput(input::HealthcheckInput::builder().build().unwrap()))
+        Ok(HealthcheckInput(
+            input::HealthcheckInput::builder().build().unwrap(),
+        ))
     }
 }

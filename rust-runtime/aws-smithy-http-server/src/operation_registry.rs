@@ -3,7 +3,9 @@
 // =============================
 
 use crate::model::*;
-use crate::routing::request_spec::{PathAndQuerySpec, PathSegment, PathSpec, QuerySegment, UriSpec};
+use crate::routing::request_spec::{
+    PathAndQuerySpec, PathSegment, PathSpec, QuerySegment, UriSpec,
+};
 use crate::routing::{operation_handler::operation, request_spec::RequestSpec, Router};
 use crate::runtime::AwsRestJson1;
 use derive_builder::Builder;
@@ -91,6 +93,9 @@ where
 
         Router::new()
             .route(health_check_request_spec, operation(registry.health_check))
-            .route(register_service_request_spec, operation(registry.register_service))
+            .route(
+                register_service_request_spec,
+                operation(registry.register_service),
+            )
     }
 }

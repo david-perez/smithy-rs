@@ -22,13 +22,19 @@ where
     H: Clone,
 {
     fn clone(&self) -> Self {
-        Self { handler: self.handler.clone(), _marker: PhantomData }
+        Self {
+            handler: self.handler.clone(),
+            _marker: PhantomData,
+        }
     }
 }
 
 /// Construct an [`OperationHandler`] out of a function implementing the operation.
 pub fn operation<H, B, T>(handler: H) -> OperationHandler<H, B, T> {
-    OperationHandler { handler, _marker: PhantomData }
+    OperationHandler {
+        handler,
+        _marker: PhantomData,
+    }
 }
 
 impl<H, B, T> Service<Request<B>> for OperationHandler<H, B, T>

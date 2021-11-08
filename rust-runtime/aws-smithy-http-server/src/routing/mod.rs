@@ -23,7 +23,9 @@ pub struct Router<B = Body> {
 
 impl<B> Clone for Router<B> {
     fn clone(&self) -> Self {
-        Self { routes: self.routes.clone() }
+        Self {
+            routes: self.routes.clone(),
+        }
     }
 }
 
@@ -45,13 +47,18 @@ where
     /// Unless you add additional routes this will respond to `404 Not Found` to
     /// all requests.
     pub fn new() -> Self {
-        Self { routes: Default::default() }
+        Self {
+            routes: Default::default(),
+        }
     }
 
     /// Add a route to the router.
     pub fn route<T>(mut self, request_spec: RequestSpec, svc: T) -> Self
     where
-        T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible> + Clone + Send + 'static,
+        T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible>
+            + Clone
+            + Send
+            + 'static,
         T::Future: Send + 'static,
     {
         let svc = match try_downcast::<Router<B>, _>(svc) {
@@ -109,8 +116,17 @@ where
             }
         }
 
-        let status_code = if method_not_allowed { StatusCode::METHOD_NOT_ALLOWED } else { StatusCode::NOT_FOUND };
-        RouterFuture::from_response(Response::builder().status(status_code).body(crate::body::empty()).unwrap())
+        let status_code = if method_not_allowed {
+            StatusCode::METHOD_NOT_ALLOWED
+        } else {
+            StatusCode::NOT_FOUND
+        };
+        RouterFuture::from_response(
+            Response::builder()
+                .status(status_code)
+                .body(crate::body::empty())
+                .unwrap(),
+        )
     }
 }
 

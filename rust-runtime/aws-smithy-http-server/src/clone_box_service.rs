@@ -5,7 +5,10 @@ use tower_service::Service;
 
 /// A `Clone + Send` boxed `Service`
 pub(crate) struct CloneBoxService<T, U, E>(
-    Box<dyn CloneService<T, Response = U, Error = E, Future = BoxFuture<'static, Result<U, E>>> + Send>,
+    Box<
+        dyn CloneService<T, Response = U, Error = E, Future = BoxFuture<'static, Result<U, E>>>
+            + Send,
+    >,
 );
 
 impl<T, U, E> CloneBoxService<T, U, E> {
@@ -44,7 +47,10 @@ impl<T, U, E> Clone for CloneBoxService<T, U, E> {
 trait CloneService<R>: Service<R> {
     fn clone_box(
         &self,
-    ) -> Box<dyn CloneService<R, Response = Self::Response, Error = Self::Error, Future = Self::Future> + Send>;
+    ) -> Box<
+        dyn CloneService<R, Response = Self::Response, Error = Self::Error, Future = Self::Future>
+            + Send,
+    >;
 }
 
 impl<R, T> CloneService<R> for T
@@ -53,7 +59,8 @@ where
 {
     fn clone_box(
         &self,
-    ) -> Box<dyn CloneService<R, Response = T::Response, Error = T::Error, Future = T::Future> + Send> {
+    ) -> Box<dyn CloneService<R, Response = T::Response, Error = T::Error, Future = T::Future> + Send>
+    {
         Box::new(self.clone())
     }
 }

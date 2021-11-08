@@ -1,10 +1,10 @@
 [package]
 name = "aws-smithy-http-server"
 version = "0.1.0"
-authors = ["Smithy Rust Server <smithy-rs-server@amazon.com>"]
+authors = ["Matteo Bigoi <matbigoi@amazon.com>", "David Pérez <davidpz@amazon.com>"]
 edition = "2018"
 description = """
-Server traits and utilities used by the code generator.
+Server runtime for Smithy Rust Server Framework.
 
 NOTE: THIS IS HIGHLY EXPERIMENTAL AND SHOULD NOT BE USED YET.
 """
@@ -12,9 +12,29 @@ NOTE: THIS IS HIGHLY EXPERIMENTAL AND SHOULD NOT BE USED YET.
 publish = false
 
 [dependencies]
-aws-smithy-http = { path = "../aws-smithy-http" }
+async-trait = "0.1"
+axum = "0.3"
 bytes = "1.1"
+derive_builder = "0.10"
+futures = "0.3"
+futures-util = { version = "0.3", default-features = false }
 http = "0.2"
+http-body = "0.4"
+hyper = { version = "0.14", features = ["server", "http1", "http2", "tcp"] }
+lazy_static = "1.4"
+mime = "0.3"
+percent-encoding = "2.1"
+pin-project-lite = "0.2.7"
+regex = "1.0"
+serde_urlencoded = "0.7"
+thiserror = "1"
+tokio = { version = "1.0", features = ["full"] }
+tower = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.1", features = ["trace"] }
+tower-service = "0.3"
+tracing = "0.1"
+tracing-appender = "0.1"
+tracing-subscriber = "0.2"
 
 [dev-dependencies]
 pretty_assertions = "1"

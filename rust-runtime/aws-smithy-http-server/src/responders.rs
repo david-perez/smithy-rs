@@ -12,7 +12,9 @@ impl IntoResponse for HealthcheckOutput {
 
     fn into_response(self) -> Response<Self::Body> {
         Response::builder()
-            .body(Body::from(String::from("output::HealthcheckOutput has no fields, but we would read them here")))
+            .body(Body::from(String::from(
+                "output::HealthcheckOutput has no fields, but we would read them here",
+            )))
             .unwrap()
     }
 }
@@ -22,7 +24,9 @@ impl IntoResponse for RegisterServiceOutput {
     type BodyError = <Self::Body as axum::body::HttpBody>::Error;
 
     fn into_response(self) -> Response<Self::Body> {
-        Response::builder().body(Body::from(String::from("RegisterServiceOutput TODO"))).unwrap()
+        Response::builder()
+            .body(Body::from(String::from("RegisterServiceOutput TODO")))
+            .unwrap()
     }
 }
 

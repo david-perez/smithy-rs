@@ -25,10 +25,16 @@ pub struct Route<B = Body> {
 impl<B> Route<B> {
     pub(super) fn new<T>(svc: T, request_spec: RequestSpec) -> Self
     where
-        T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible> + Clone + Send + 'static,
+        T: Service<Request<B>, Response = Response<BoxBody>, Error = Infallible>
+            + Clone
+            + Send
+            + 'static,
         T::Future: Send + 'static,
     {
-        Self { service: CloneBoxService::new(svc), request_spec }
+        Self {
+            service: CloneBoxService::new(svc),
+            request_spec,
+        }
     }
 
     pub(super) fn matches(&self, req: &Request<B>) -> Match {
@@ -38,7 +44,10 @@ impl<B> Route<B> {
 
 impl<ReqBody> Clone for Route<ReqBody> {
     fn clone(&self) -> Self {
-        Self { service: self.service.clone(), request_spec: self.request_spec.clone() }
+        Self {
+            service: self.service.clone(),
+            request_spec: self.request_spec.clone(),
+        }
     }
 }
 
@@ -76,7 +85,9 @@ pin_project! {
 }
 
 impl<B> RouteFuture<B> {
-    pub(crate) fn new(future: Oneshot<CloneBoxService<Request<B>, Response<BoxBody>, Infallible>, Request<B>>) -> Self {
+    pub(crate) fn new(
+        future: Oneshot<CloneBoxService<Request<B>, Response<BoxBody>, Infallible>, Request<B>>,
+    ) -> Self {
         RouteFuture { future }
     }
 }

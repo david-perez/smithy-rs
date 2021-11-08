@@ -88,7 +88,11 @@ impl From<&PathSpec> for Regex {
 impl RequestSpec {
     pub fn new(method: http::Method, uri_spec: UriSpec) -> Self {
         let uri_path_regex = (&uri_spec.path_and_query.path_segments).into();
-        RequestSpec { method, uri_spec, uri_path_regex }
+        RequestSpec {
+            method,
+            uri_spec,
+            uri_path_regex,
+        }
     }
 
     pub(super) fn matches<B>(&self, req: &Request<B>) -> Match {
@@ -122,14 +126,16 @@ impl RequestSpec {
                                         return Match::No;
                                     }
                                 }
-                                QuerySegment::KeyValue(key, expected_value) => match query_map.get(key.as_str()) {
-                                    None => return Match::No,
-                                    Some(found_value) => {
-                                        if found_value != expected_value {
-                                            return Match::No;
+                                QuerySegment::KeyValue(key, expected_value) => {
+                                    match query_map.get(key.as_str()) {
+                                        None => return Match::No,
+                                        Some(found_value) => {
+                                            if found_value != expected_value {
+                                                return Match::No;
+                                            }
                                         }
                                     }
-                                },
+                                }
                             }
                         }
 
@@ -187,12 +193,18 @@ pub enum PathAndQuerySpecParseError {
 impl PathAndQuerySpec {
     // Private function for use in tests, to help in building `PathAndQuerySpec`s.
     fn parse(s: &str) -> Result<Self, PathAndQuerySpecParseError> {
-        let first_char = s.chars().next().ok_or(PathAndQuerySpecParseError::DoesNotStartWithForwardSlash)?;
+        let first_char = s
+            .chars()
+            .next()
+            .ok_or(PathAndQuerySpecParseError::DoesNotStartWithForwardSlash)?;
         if first_char != '/' {
             return Err(PathAndQuerySpecParseError::DoesNotStartWithForwardSlash);
         }
 
-        let last_char = s.chars().last().expect("we checked above that `s` is not empty");
+        let last_char = s
+            .chars()
+            .last()
+            .expect("we checked above that `s` is not empty");
         if last_char == '?' {
             return Err(PathAndQuerySpecParseError::EndsWithQuestionMark);
         }
@@ -206,7 +218,9 @@ impl PathAndQuerySpec {
         }
 
         let mut iter = s.split('?');
-        let path = iter.next().expect("`split()` always returns an iterator with at least one element");
+        let path = iter
+            .next()
+            .expect("`split()` always returns an iterator with at least one element");
 
         let path_spec = if path == "/" {
             PathSpec(Vec::new())
@@ -219,19 +233,26 @@ impl PathAndQuerySpec {
                     // slash in the pattern, which we already checked exists.
                     .skip(1)
                     .map(|path_segment| {
-                        let first_char =
-                            path_segment.chars().next().ok_or(PathAndQuerySpecParseError::ContainsEmptyPathSegment)?;
+                        let first_char = path_segment
+                            .chars()
+                            .next()
+                            .ok_or(PathAndQuerySpecParseError::ContainsEmptyPathSegment)?;
 
                         let mut last_two_chars = path_segment.chars().rev().take(2);
-                        let last_char =
-                            last_two_chars.next().expect("we checked above that `path_segment` is not empty");
+                        let last_char = last_two_chars
+                            .next()
+                            .expect("we checked above that `path_segment` is not empty");
                         let penultimate_char_opt = last_two_chars.next();
 
                         match (first_char, penultimate_char_opt, last_char) {
                             ('{', Some('+'), '}') => Ok(PathSegment::Greedy),
                             ('{', _, '}') => Ok(PathSegment::Label),
-                            ('{', _, _c) => Err(PathAndQuerySpecParseError::UnclosedLabel(String::from(path_segment))),
-                            (_c, _, '}') => Err(PathAndQuerySpecParseError::UnopenedLabel(String::from(path_segment))),
+                            ('{', _, _c) => Err(PathAndQuerySpecParseError::UnclosedLabel(
+                                String::from(path_segment),
+                            )),
+                            (_c, _, '}') => Err(PathAndQuerySpecParseError::UnopenedLabel(
+                                String::from(path_segment),
+                            )),
                             _ => Ok(PathSegment::Literal(String::from(path_segment))),
                         }
                     })
@@ -241,7 +262,10 @@ impl PathAndQuerySpec {
 
         let query_opt = iter.next();
         match query_opt {
-            None => Ok(PathAndQuerySpec { path_segments: path_spec, query_segments: Vec::new() }),
+            None => Ok(PathAndQuerySpec {
+                path_segments: path_spec,
+                query_segments: Vec::new(),
+            }),
             Some(query_string) => {
                 // TODO Interestingly, `Vec<&str, &str>` does not work, which would be better. Why?
                 let query_spec = serde_urlencoded::from_str::<HashMap<&str, &str>>(query_string)?
@@ -255,7 +279,10 @@ impl PathAndQuerySpec {
                     })
                     .collect();
 
-                Ok(PathAndQuerySpec { path_segments: path_spec, query_segments: query_spec })
+                Ok(PathAndQuerySpec {
+                    path_segments: path_spec,
+                    query_segments: query_spec,
+                })
             }
         }
     }
@@ -299,24 +326,46 @@ mod tests {
     #[tokio::test]
     async fn parse_invalid_uri_patterns() {
         let patterns = [
-            ("path", PathAndQuerySpecParseError::DoesNotStartWithForwardSlash),
+            (
+                "path",
+                PathAndQuerySpecParseError::DoesNotStartWithForwardSlash,
+            ),
             ("//", PathAndQuerySpecParseError::ContainsEmptyPathSegment),
-            ("/my/path?", PathAndQuerySpecParseError::EndsWithQuestionMark),
-            ("/path#fragment", PathAndQuerySpecParseError::ContainsFragment),
+            (
+                "/my/path?",
+                PathAndQuerySpecParseError::EndsWithQuestionMark,
+            ),
+            (
+                "/path#fragment",
+                PathAndQuerySpecParseError::ContainsFragment,
+            ),
             ("/pa.th..to", PathAndQuerySpecParseError::ContainsDotSegment),
-            ("/{label", PathAndQuerySpecParseError::UnclosedLabel(String::from("{label"))),
-            ("/label}", PathAndQuerySpecParseError::UnopenedLabel(String::from("label}"))),
+            (
+                "/{label",
+                PathAndQuerySpecParseError::UnclosedLabel(String::from("{label")),
+            ),
+            (
+                "/label}",
+                PathAndQuerySpecParseError::UnopenedLabel(String::from("label}")),
+            ),
         ];
 
         for (pattern, expected_error) in patterns {
-            assert_eq!(expected_error, PathAndQuerySpec::parse(pattern).unwrap_err());
+            assert_eq!(
+                expected_error,
+                PathAndQuerySpec::parse(pattern).unwrap_err()
+            );
         }
     }
 
     #[tokio::test]
     async fn test_always_get() {
         let request_spec = RequestSpec::always_get();
-        let request = Request::builder().method("GET").uri("https://www.rust-lang.org/").body(()).unwrap();
+        let request = Request::builder()
+            .method("GET")
+            .uri("https://www.rust-lang.org/")
+            .body(())
+            .unwrap();
         request_spec.matches(&request);
     }
 }
