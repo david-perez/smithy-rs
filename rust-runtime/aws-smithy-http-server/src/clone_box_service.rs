@@ -1,7 +1,6 @@
 use futures_util::future::BoxFuture;
 use std::task::{Context, Poll};
-use tower::ServiceExt;
-use tower_service::Service;
+use tower::{Service, ServiceExt};
 
 /// A `Clone + Send` boxed `Service`
 pub(crate) struct CloneBoxService<T, U, E>(

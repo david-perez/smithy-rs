@@ -16,6 +16,7 @@ async-trait = "0.1"
 aws-smithy-http = { path = "../aws-smithy-http" }
 axum = "0.3"
 bytes = "1.1"
+# TODO This can be removed, it's in the service crate.
 derive_builder = "0.10"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"
@@ -28,9 +29,7 @@ regex = "1.0"
 serde_urlencoded = "0.7"
 thiserror = "1"
 tokio = { version = "1.0", features = ["full"] }
-tower = { version = "0.4", features = ["full"] }
-tower-http = { version = "0.1", features = ["trace"] }
-tower-service = "0.3"
+tower = { version = "0.4" }
 
 [dev-dependencies]
 pretty_assertions = "1"

@@ -11,8 +11,8 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
+use tower::Service;
 use tower::{util::Oneshot, ServiceExt};
-use tower_service::Service;
 
 use super::request_spec::{Match, RequestSpec};
 

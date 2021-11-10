@@ -3,7 +3,7 @@ use std::{
     future::ready,
     task::{Context, Poll},
 };
-use tower_service::Service;
+use tower::Service;
 
 /// A [`MakeService`] that produces router services.
 ///

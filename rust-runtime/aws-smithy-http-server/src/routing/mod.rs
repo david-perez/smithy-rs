@@ -5,8 +5,7 @@ use std::{
     convert::Infallible,
     task::{Context, Poll},
 };
-use tower::util::ServiceExt;
-use tower_service::Service;
+use tower::{Service, ServiceExt};
 
 pub mod future;
 mod into_make_service;

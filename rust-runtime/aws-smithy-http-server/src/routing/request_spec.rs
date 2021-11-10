@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use derive_builder::Builder;
 use http::Request;
 use regex::Regex;
 use thiserror::Error;
@@ -37,7 +36,7 @@ pub struct PathAndQuerySpec {
     pub query_segments: QuerySpec,
 }
 
-#[derive(Debug, Clone, Builder)]
+#[derive(Debug, Clone)]
 pub struct UriSpec {
     #[builder(default)]
     pub host_prefix: Option<Vec<HostPrefixSegment>>,

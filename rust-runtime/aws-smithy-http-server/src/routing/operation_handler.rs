@@ -8,7 +8,7 @@ use std::{
     pin::Pin,
     task::{Context, Poll},
 };
-use tower_service::Service;
+use tower::Service;
 
 /// Struct that holds a handler, that is, a function provided by the user that implements the
 /// Smithy operation.
