@@ -218,7 +218,6 @@ data class CargoDependency(
         val TempFile = CargoDependency("temp-file", CratesIo("0.1.6"), scope = DependencyScope.Dev)
         val Ring = CargoDependency("ring", CratesIo("0.16"))
         val DeriveBuilder = CargoDependency("derive_builder", CratesIo("0.10"))
-        // TODO Update to 0.3 once we move to 1.54
-        val Axum = CargoDependency("axum", CratesIo("0.2"))
+        val Axum = CargoDependency("axum", CratesIo("0.3"))
     }
 }

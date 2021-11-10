@@ -14,7 +14,7 @@ publish = false
 [dependencies]
 async-trait = "0.1"
 aws-smithy-http = { path = "../aws-smithy-http" }
-axum = "0.2"
+axum = "0.3"
 bytes = "1.1"
 derive_builder = "0.10"
 futures-util = { version = "0.3", default-features = false }
