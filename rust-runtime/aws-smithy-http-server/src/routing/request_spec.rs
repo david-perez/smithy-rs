@@ -38,9 +38,7 @@ pub struct PathAndQuerySpec {
 
 #[derive(Debug, Clone)]
 pub struct UriSpec {
-    #[builder(default)]
     pub host_prefix: Option<Vec<HostPrefixSegment>>,
-    #[builder(default)]
     pub path_and_query: PathAndQuerySpec,
 }
 
@@ -147,14 +145,6 @@ impl RequestSpec {
                 }
             }
             None => Match::No,
-        }
-    }
-
-    pub fn always_get() -> Self {
-        RequestSpec {
-            method: http::Method::GET,
-            uri_spec: UriSpecBuilder::default().build().unwrap(),
-            uri_path_regex: Regex::new(".*").unwrap(),
         }
     }
 }
@@ -356,16 +346,5 @@ mod tests {
                 PathAndQuerySpec::parse(pattern).unwrap_err()
             );
         }
-    }
-
-    #[tokio::test]
-    async fn test_always_get() {
-        let request_spec = RequestSpec::always_get();
-        let request = Request::builder()
-            .method("GET")
-            .uri("https://www.rust-lang.org/")
-            .body(())
-            .unwrap();
-        request_spec.matches(&request);
     }
 }
