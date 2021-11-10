@@ -13,9 +13,11 @@ publish = false
 
 [dependencies]
 async-trait = "0.1"
-axum = "0.3"
+aws-smithy-http = { path = "../aws-smithy-http" }
+axum = "0.2"
 bytes = "1.1"
 derive_builder = "0.10"
+# TODO We might not need this
 futures = "0.3"
 futures-util = { version = "0.3", default-features = false }
 http = "0.2"

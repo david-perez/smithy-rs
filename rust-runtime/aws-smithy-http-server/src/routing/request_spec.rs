@@ -190,6 +190,7 @@ pub enum PathAndQuerySpecParseError {
     InvalidQuerySpec(#[from] serde_urlencoded::de::Error),
 }
 
+#[cfg(test)]
 impl PathAndQuerySpec {
     // Private function for use in tests, to help in building `PathAndQuerySpec`s.
     fn parse(s: &str) -> Result<Self, PathAndQuerySpecParseError> {

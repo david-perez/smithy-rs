@@ -176,6 +176,18 @@ data class RuntimeType(val name: String?, val dependency: RustDependency?, val n
         val PartialEq = std.member("cmp::PartialEq")
         val StdError = RuntimeType("Error", dependency = null, namespace = "std::error")
         val String = RuntimeType("String", dependency = null, namespace = "std::string")
+        val DeriveBuilder = RuntimeType("Builder", dependency = CargoDependency.DeriveBuilder, namespace = "derive_builder")
+
+        // Axum types.
+        val FromRequest = RuntimeType("FromRequest", dependency = CargoDependency.Axum, namespace = "axum::extract")
+        val RequestParts = RuntimeType("RequestParts", dependency = CargoDependency.Axum, namespace = "axum::extract")
+        val IntoResponse = RuntimeType("IntoResponse", dependency = CargoDependency.Axum, namespace = "axum::response")
+        val AxumBody = RuntimeType("Body", dependency = CargoDependency.Axum, namespace = "axum::body")
+        val AxumHttpBody = RuntimeType("HttpBody", dependency = CargoDependency.Axum, namespace = "axum::body")
+        val AsyncTrait = RuntimeType("async_trait", dependency = CargoDependency.Axum, namespace = "axum")
+
+        fun Router(runtimeConfig: RuntimeConfig) =
+            RuntimeType("Router", CargoDependency.SmithyHttpServer(runtimeConfig), "${runtimeConfig.crateSrcPrefix}_http_server::routing")
 
         fun Instant(runtimeConfig: RuntimeConfig) =
             RuntimeType("Instant", CargoDependency.SmithyTypes(runtimeConfig), "${runtimeConfig.crateSrcPrefix}_types")

@@ -15,6 +15,9 @@ mod error;
 pub mod routing;
 pub mod runtime;
 
+pub mod request;
+pub mod response;
+
 #[doc(inline)]
 pub use self::{error::Error, routing::Router};
 
