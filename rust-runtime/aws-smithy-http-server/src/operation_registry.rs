@@ -7,7 +7,6 @@ use crate::routing::request_spec::{
     PathAndQuerySpec, PathSegment, PathSpec, QuerySegment, UriSpec,
 };
 use crate::routing::{operation_handler::operation, request_spec::RequestSpec, Router};
-use crate::runtime::AwsRestJson1;
 use derive_builder::Builder;
 use std::future::Future;
 // use std::marker::PhantomData;
@@ -28,7 +27,7 @@ pub struct SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>
 where
     C1: FnOnce(HealthcheckInput) -> Fut1 + Clone + Send + Sync + 'static,
     Fut1: Future<Output = HealthcheckOutput> + Send,
-    C2: FnOnce(AwsRestJson1<RegisterServiceInput>) -> Fut2 + Clone + Send + Sync + 'static,
+    C2: FnOnce(RegisterServiceInput) -> Fut2 + Clone + Send + Sync + 'static,
     Fut2: Future<Output = Result<RegisterServiceOutput, RegisterServiceError>> + Send,
 {
     pub health_check: C1,
@@ -49,11 +48,11 @@ impl<C1, Fut1, C2, Fut2> From<SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>
 where
     C1: FnOnce(HealthcheckInput) -> Fut1 + Clone + Send + Sync + 'static,
     Fut1: Future<Output = HealthcheckOutput> + Send,
-    C2: FnOnce(AwsRestJson1<RegisterServiceInput>) -> Fut2 + Clone + Send + Sync + 'static,
+    C2: FnOnce(RegisterServiceInput) -> Fut2 + Clone + Send + Sync + 'static,
     Fut2: Future<Output = Result<RegisterServiceOutput, RegisterServiceError>> + Send,
 {
     fn from(registry: SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>) -> Self {
-        // fun(registry.register_service);
+        // _fun(registry.register_service);
 
         // `http localhost:8080/path/to/label/healthcheck`
         let health_check_request_spec = RequestSpec::new(

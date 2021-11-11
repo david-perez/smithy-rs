@@ -2,50 +2,44 @@
 // What the user writes
 // ====================
 
-// use aws_smithy_http_server::model::*;
-// use aws_smithy_http_server::operation_registry::SimpleServiceOperationRegistryBuilder;
-// use aws_smithy_http_server::routing::Router;
-// use aws_smithy_http_server::runtime::AwsRestJson1;
-// use simple::output;
+use aws_smithy_http_server::model::*;
+use aws_smithy_http_server::operation_registry::SimpleServiceOperationRegistryBuilder;
+use aws_smithy_http_server::routing::Router;
 
-// // Notice how this operation implementation does not return `Result<T, E>`, because the Smithy
-// // model declares this operation as being infallible (no `errors` property:
-// // https://awslabs.github.io/smithy/1.0/spec/core/model.html#operation).
-// async fn healthcheck_operation(_input: HealthcheckInput) -> HealthcheckOutput {
-//     HealthcheckOutput(output::HealthcheckOutput::builder().build())
-// }
+// Notice how this operation implementation does not return `Result<T, E>`, because the Smithy
+// model declares this operation as being infallible (no `errors` property:
+// https://awslabs.github.io/smithy/1.0/spec/core/model.html#operation).
+async fn healthcheck_operation(_input: HealthcheckInput) -> HealthcheckOutput {
+    HealthcheckOutput
+}
 
-// async fn register_service_operation(
-//     _input: AwsRestJson1<RegisterServiceInput>,
-// ) -> Result<RegisterServiceOutput, RegisterServiceError> {
-//     Ok(RegisterServiceOutput(
-//         output::RegisterServiceOutput::builder()
-//             .id(String::from("id"))
-//             .build(),
-//     ))
-// }
+async fn register_service_operation(
+    _input: RegisterServiceInput,
+) -> Result<RegisterServiceOutput, RegisterServiceError> {
+    Ok(RegisterServiceOutput)
+}
 
 #[tokio::main]
 async fn main() {
-    // let app: Router = SimpleServiceOperationRegistryBuilder::default()
-    //     // Build a registry containing implementations to all the operations in the service.  These
-    //     // are async functions or async closures that take as input the operation's input and
-    //     // return the operation's output.
-    //     .health_check(healthcheck_operation)
-    //     .register_service(register_service_operation)
-    //     .build()
-    //     .unwrap()
-    //     // Convert it into a router that will route requests to the matching operation
-    //     // implementation.
-    //     .into();
+    let app: Router = SimpleServiceOperationRegistryBuilder::default()
+        // Build a registry containing implementations to all the operations in the service.  These
+        // are async functions or async closures that take as input the operation's input and
+        // return the operation's output.
+        .health_check(healthcheck_operation)
+        .register_service(register_service_operation)
+        .build()
+        .unwrap()
+        // Convert it into a router that will route requests to the matching operation
+        // implementation.
+        .into();
 
-    // // TODO Allow users to add Tower layers to the `Router`.
+    // TODO Allow users to add Tower layers to the `Router`.
 
-    // let server =
-    //     axum::Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
+    let server =
+        axum::Server::bind(&"0.0.0.0:8080".parse().unwrap()).serve(app.into_make_service());
 
-    // // Run forever-ish...
-    // if let Err(err) = server.await {
-    //     eprintln!("server error: {}", err);
-    // }
+    // Run forever-ish...
+    if let Err(err) = server.await {
+        eprintln!("server error: {}", err);
+    }
 }

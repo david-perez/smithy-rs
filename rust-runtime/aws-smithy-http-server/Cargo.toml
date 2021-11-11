@@ -29,5 +29,8 @@ thiserror = "1"
 tokio = { version = "1.0", features = ["full"] }
 tower = { version = "0.4" }
 
+# TODO This can be removed, it's in the service crate.
+derive_builder = "0.10"
+
 [dev-dependencies]
 pretty_assertions = "1"

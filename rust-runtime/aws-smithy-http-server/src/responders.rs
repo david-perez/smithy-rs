@@ -37,6 +37,6 @@ impl IntoResponse for RegisterServiceError {
     type BodyError = <Self::Body as axum::body::HttpBody>::Error;
 
     fn into_response(self) -> Response<Self::Body> {
-        unimplemented!()
+        todo!()
     }
 }
