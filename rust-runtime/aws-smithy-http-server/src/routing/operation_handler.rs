@@ -1,5 +1,4 @@
-use crate::body::{box_body, BoxBody};
-use axum::handler::Handler;
+use crate::{body::BoxBody, handler::Handler};
 use http::{Request, Response};
 use std::{
     convert::Infallible,
@@ -44,8 +43,8 @@ where
 {
     type Response = Response<BoxBody>;
     type Error = Infallible;
-    // TODO Use `opaque_future!` and `pin_project`.
-    // TODO Is `axum`'s future `Send`?
+    // TODO Implement our own future to avoid the pinned box.
+    // Or at least use `opaque_future!` and `pin_project`.
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     #[inline]
@@ -56,11 +55,8 @@ where
     fn call(&mut self, req: Request<B>) -> Self::Future {
         let handler_clone = self.handler.clone();
 
-        // Ugly code to convert `Response<axum::body::BoxBody>` to
-        // `Response<crate::body::BoxBody>`.
         let fut = async {
             let resp = Handler::call(handler_clone, req).await;
-            let resp = resp.map(|b| box_body(b));
             Ok(resp)
         };
         Box::pin(fut)

@@ -51,7 +51,7 @@ where
     C2: FnOnce(RegisterServiceInput) -> Fut2 + Clone + Send + Sync + 'static,
     Fut2: Future<Output = Result<RegisterServiceOutput, RegisterServiceError>> + Send,
 {
-    fn from(registry: SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>) -> Self {
+    fn from(_registry: SimpleServiceOperationRegistry<C1, Fut1, C2, Fut2>) -> Self {
         // _fun(registry.register_service);
 
         // `http localhost:8080/path/to/label/healthcheck`
@@ -90,11 +90,37 @@ where
             },
         );
 
+        // let w = |input: HealthcheckOperationInput| async {
+        //     let inner = input.0;
+        //     let out = (registry.health_check)(inner).await;
+        //     HealthcheckOperationOutput(out)
+        // };
+
+        // w.clone();
+
+        // _fun(w);
+
+        // let w = |input: HealthcheckOperationInput| -> Pin<Box<dyn Future<Output = HealthcheckOperationOutput>>> {
+        //     let v = async { HealthcheckOperationOutput };
+
+        //     Box::pin(v)
+        // };
+
         Router::new()
-            .route(health_check_request_spec, operation(registry.health_check))
+            .route(health_check_request_spec, operation(health_check_wrapper))
             .route(
                 register_service_request_spec,
-                operation(registry.register_service),
+                operation(register_service_wrapper),
             )
     }
+}
+
+async fn health_check_wrapper(_input: HealthcheckOperationInput) -> HealthcheckOperationOutput {
+    todo!()
+}
+
+async fn register_service_wrapper(
+    _input: RegisterServiceOperationInput,
+) -> Result<RegisterServiceOperationOutput, RegisterServiceError> {
+    todo!()
 }

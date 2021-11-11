@@ -9,7 +9,7 @@ use axum::{
 };
 
 #[async_trait]
-impl<B> FromRequest<B> for RegisterServiceInput
+impl<B> FromRequest<B> for RegisterServiceOperationInput
 where
     B: Send,
 {
@@ -23,7 +23,7 @@ where
 // Same thing for the other operation.
 
 #[async_trait]
-impl<B> FromRequest<B> for HealthcheckInput
+impl<B> FromRequest<B> for HealthcheckOperationInput
 where
     B: Send,
 {
