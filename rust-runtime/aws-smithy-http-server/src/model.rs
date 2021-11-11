@@ -7,10 +7,35 @@ pub struct RegisterServiceInput;
 pub struct RegisterServiceOutput;
 pub struct RegisterServiceError;
 pub struct RegisterServiceOperationInput(pub RegisterServiceInput);
-pub struct RegisterServiceOperationOutput(pub RegisterServiceOutput);
+
+pub enum RegisterServiceOperationOutput {
+    Output(RegisterServiceOutput),
+    Error(RegisterServiceError),
+}
 
 impl From<HealthcheckOperationInput> for HealthcheckInput {
     fn from(v: HealthcheckOperationInput) -> Self {
         v.0
+    }
+}
+
+impl From<HealthcheckOutput> for HealthcheckOperationOutput {
+    fn from(v: HealthcheckOutput) -> Self {
+        HealthcheckOperationOutput(v)
+    }
+}
+
+impl From<RegisterServiceOperationInput> for RegisterServiceInput {
+    fn from(v: RegisterServiceOperationInput) -> Self {
+        v.0
+    }
+}
+
+impl From<Result<RegisterServiceOutput, RegisterServiceError>> for RegisterServiceOperationOutput {
+    fn from(res: Result<RegisterServiceOutput, RegisterServiceError>) -> Self {
+        match res {
+            Ok(v) => RegisterServiceOperationOutput::Output(v),
+            Err(e) => RegisterServiceOperationOutput::Error(e),
+        }
     }
 }

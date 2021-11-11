@@ -15,7 +15,7 @@ pub(crate) mod sealed {
 }
 
 #[async_trait]
-pub trait Handler<B, T>: Clone + Send + Sized + 'static {
+pub trait Handler<B, T, I, O>: Clone + Send + Sized + 'static {
     #[doc(hidden)]
     type Sealed: sealed::HiddenTrait;
 
@@ -23,50 +23,33 @@ pub trait Handler<B, T>: Clone + Send + Sized + 'static {
 }
 
 #[async_trait]
-impl<F, Fut, Res, B> Handler<B, ()> for F
+#[allow(non_snake_case)]
+impl<F, Fut, B, Res, T, I, O> Handler<B, T, I, Res> for F
 where
-    F: FnOnce() -> Fut + Clone + Send + Sync + 'static,
-    Fut: Future<Output = Res> + Send,
-    Res: IntoResponse,
+    F: FnOnce(I) -> Fut + Clone + Send + Sync + 'static,
+    Fut: Future<Output = O> + Send,
     B: Send + 'static,
+    Res: From<O>,
+    Res: IntoResponse,
+    I: From<T> + Send,
+    T: FromRequest<B> + Send,
 {
     type Sealed = sealed::Hidden;
 
-    async fn call(self, _req: Request<B>) -> Response<BoxBody> {
-        self().await.into_response().map(box_body)
+    async fn call(self, req: Request<B>) -> Response<BoxBody> {
+        let mut req = RequestParts::new(req);
+
+        let wrapper = match T::from_request(&mut req).await {
+            Ok(value) => value,
+            Err(rejection) => return rejection.into_response().map(box_body),
+        };
+
+        let input_inner: I = wrapper.into();
+
+        let output_inner: O = self(input_inner).await;
+
+        let res: Res = output_inner.into();
+
+        res.into_response().map(box_body)
     }
 }
-
-macro_rules! impl_handler {
-    ( $($ty:ident),* $(,)? ) => {
-        #[async_trait]
-        #[allow(non_snake_case)]
-        impl<F, Fut, B, Res, $($ty,)*> Handler<B, ($($ty,)*)> for F
-        where
-            F: FnOnce($($ty,)*) -> Fut + Clone + Send + Sync + 'static,
-            Fut: Future<Output = Res> + Send,
-            B: Send + 'static,
-            Res: IntoResponse,
-            $( $ty: FromRequest<B> + Send,)*
-        {
-            type Sealed = sealed::Hidden;
-
-            async fn call(self, req: Request<B>) -> Response<BoxBody> {
-                let mut req = RequestParts::new(req);
-
-                $(
-                    let $ty = match $ty::from_request(&mut req).await {
-                        Ok(value) => value,
-                        Err(rejection) => return rejection.into_response().map(box_body),
-                    };
-                )*
-
-                let res = self($($ty,)*).await;
-
-                res.into_response().map(box_body)
-            }
-        }
-    };
-}
-
-impl_handler!(T1);

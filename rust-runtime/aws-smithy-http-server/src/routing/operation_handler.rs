@@ -11,12 +11,12 @@ use tower::Service;
 
 /// Struct that holds a handler, that is, a function provided by the user that implements the
 /// Smithy operation.
-pub struct OperationHandler<H, B, T> {
+pub struct OperationHandler<H, B, T, I, Res> {
     handler: H,
-    _marker: PhantomData<fn() -> (B, T)>,
+    _marker: PhantomData<fn() -> (B, T, I, Res)>,
 }
 
-impl<H, B, T> Clone for OperationHandler<H, B, T>
+impl<H, B, T, I, Res> Clone for OperationHandler<H, B, T, I, Res>
 where
     H: Clone,
 {
@@ -29,16 +29,16 @@ where
 }
 
 /// Construct an [`OperationHandler`] out of a function implementing the operation.
-pub fn operation<H, B, T>(handler: H) -> OperationHandler<H, B, T> {
+pub fn operation<H, B, T, I, Res>(handler: H) -> OperationHandler<H, B, T, I, Res> {
     OperationHandler {
         handler,
         _marker: PhantomData,
     }
 }
 
-impl<H, B, T> Service<Request<B>> for OperationHandler<H, B, T>
+impl<H, B, T, I, Res> Service<Request<B>> for OperationHandler<H, B, T, I, Res>
 where
-    H: Handler<B, T>,
+    H: Handler<B, T, I, Res>,
     B: Send + 'static,
 {
     type Response = Response<BoxBody>;
