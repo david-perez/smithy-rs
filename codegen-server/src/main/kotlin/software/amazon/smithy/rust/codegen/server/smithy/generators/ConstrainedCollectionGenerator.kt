@@ -11,6 +11,7 @@ import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
 import software.amazon.smithy.model.traits.LengthTrait
 import software.amazon.smithy.model.traits.Trait
+import software.amazon.smithy.model.traits.UniqueItemsTrait
 import software.amazon.smithy.rust.codegen.core.rustlang.Attribute
 import software.amazon.smithy.rust.codegen.core.rustlang.RustMetadata
 import software.amazon.smithy.rust.codegen.core.rustlang.RustWriter
@@ -173,6 +174,41 @@ class ConstrainedCollectionGenerator(
 }
 
 internal sealed class CollectionTraitInfo {
+    data class UniqueItems(val uniqueItemsTrait: UniqueItemsTrait) : CollectionTraitInfo() {
+        override fun toTraitInfo(): TraitInfo =
+            TraitInfo(
+                tryFromCheck = {
+                    rust("Self::check_length(value.len())?;")
+                },
+                constraintViolationVariant = {
+                    docs("Constraint violation error when the list doesn't contain unique items")
+                    rust("UniqueItems")
+                },
+                asValidationExceptionField = {
+                    rust(
+                        """
+                        Self::UniqueItems => crate::model::ValidationExceptionField {
+                            message: format!("${uniqueItemsTrait.validationErrorMessage()}", length, &path),
+                            path,
+                        },
+                        """,
+                    )
+                },
+                validationFunctionDefinition = { constraintViolation, _ ->
+                    {
+                        rustTemplate(
+                            """
+                            fn check_unique_items(length: usize) -> Result<(), #{ConstraintViolation}> {
+                                Ok(())
+                            }
+                            """,
+                            "ConstraintViolation" to constraintViolation,
+                        )
+                    }
+                },
+            )
+    }
+
     data class Length(val lengthTrait: LengthTrait) : CollectionTraitInfo() {
         override fun toTraitInfo(): TraitInfo =
             TraitInfo(
@@ -180,7 +216,7 @@ internal sealed class CollectionTraitInfo {
                     rust("Self::check_length(value.len())?;")
                 },
                 constraintViolationVariant = {
-                    docs("Constraint violation error when the vector doesn't have the required length")
+                    docs("Constraint violation error when the list doesn't have the required length")
                     rust("Length(usize)")
                 },
                 asValidationExceptionField = {
@@ -198,11 +234,8 @@ internal sealed class CollectionTraitInfo {
                         rustTemplate(
                             """
                             fn check_length(length: usize) -> Result<(), #{ConstraintViolation}> {
-                                if ${lengthTrait.rustCondition("length")} {
-                                    Ok(())
-                                } else {
-                                    Err(#{ConstraintViolation}::Length(length))
-                                }
+                                // TODO
+                                Ok(())
                             }
                             """,
                             "ConstraintViolation" to constraintViolation,
@@ -218,10 +251,9 @@ internal sealed class CollectionTraitInfo {
                 is LengthTrait -> {
                     Length(trait)
                 }
-                // TODO(https://github.com/awslabs/smithy-rs/issues/1670): Not implemented yet.
-                // is UniqueItemsTrait -> {
-                //     UniqueItems(trait)
-                // }
+                is UniqueItemsTrait -> {
+                    UniqueItems(trait)
+                }
                 else -> {
                     PANIC("CollectionTraitInfo.fromTrait called with unsupported trait $trait")
                 }

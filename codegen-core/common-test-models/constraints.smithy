@@ -11,34 +11,34 @@ use smithy.framework#ValidationException
 service ConstraintsService {
     operations: [
         ConstrainedShapesOperation,
-        ConstrainedHttpBoundShapesOperation,
-        ConstrainedRecursiveShapesOperation,
-        // `httpQueryParams` and `httpPrefixHeaders` are structurually
-        // exclusive, so we need one operation per target shape type
-        // combination.
-        QueryParamsTargetingLengthMapOperation,
-        QueryParamsTargetingMapOfLengthStringOperation,
-        QueryParamsTargetingMapOfListOfLengthStringOperation,
-        QueryParamsTargetingMapOfSetOfLengthStringOperation,
-        QueryParamsTargetingMapOfLengthListOfPatternStringOperation,
-        QueryParamsTargetingMapOfListOfEnumStringOperation,
+//      ConstrainedHttpBoundShapesOperation,
+//      ConstrainedRecursiveShapesOperation,
+//      // `httpQueryParams` and `httpPrefixHeaders` are structurually
+//      // exclusive, so we need one operation per target shape type
+//      // combination.
+//      QueryParamsTargetingLengthMapOperation,
+//      QueryParamsTargetingMapOfLengthStringOperation,
+//      QueryParamsTargetingMapOfListOfLengthStringOperation,
+//      QueryParamsTargetingMapOfSetOfLengthStringOperation,
+//      QueryParamsTargetingMapOfLengthListOfPatternStringOperation,
+//      QueryParamsTargetingMapOfListOfEnumStringOperation,
 
-        QueryParamsTargetingMapOfPatternStringOperation,
-        QueryParamsTargetingMapOfListOfPatternStringOperation,
-        QueryParamsTargetingMapOfLengthPatternStringOperation,
-        QueryParamsTargetingMapOfListOfLengthPatternStringOperation,
+//      QueryParamsTargetingMapOfPatternStringOperation,
+//      QueryParamsTargetingMapOfListOfPatternStringOperation,
+//      QueryParamsTargetingMapOfLengthPatternStringOperation,
+//      QueryParamsTargetingMapOfListOfLengthPatternStringOperation,
 
-        HttpPrefixHeadersTargetingLengthMapOperation,
+//      HttpPrefixHeadersTargetingLengthMapOperation,
 
-        QueryParamsTargetingMapOfEnumStringOperation,
-        QueryParamsTargetingMapOfListOfEnumStringOperation,
-        // TODO(https://github.com/awslabs/smithy-rs/issues/1431)
-        // HttpPrefixHeadersTargetingMapOfEnumStringOperation,
+//      QueryParamsTargetingMapOfEnumStringOperation,
+//      QueryParamsTargetingMapOfListOfEnumStringOperation,
+//      // TODO(https://github.com/awslabs/smithy-rs/issues/1431)
+//      // HttpPrefixHeadersTargetingMapOfEnumStringOperation,
 
-        NonStreamingBlobOperation,
+//      NonStreamingBlobOperation,
 
-        StreamingBlobOperation,
-        EventStreamsOperation,
+//      StreamingBlobOperation,
+//      EventStreamsOperation,
     ],
 }
 
@@ -435,101 +435,101 @@ blob StreamingBlob
 blob NonStreamingBlob
 
 structure ConA {
-    @required
-    conB: ConB,
+//  @required
+//  conB: ConB,
 
-    optConB: ConB,
+//  optConB: ConB,
 
-    lengthString: LengthString,
-    minLengthString: MinLengthString,
-    maxLengthString: MaxLengthString,
-    fixedLengthString: FixedLengthString,
+//  lengthString: LengthString,
+//  minLengthString: MinLengthString,
+//  maxLengthString: MaxLengthString,
+//  fixedLengthString: FixedLengthString,
 
-    rangeInteger: RangeInteger,
-    minRangeInteger: MinRangeInteger,
-    maxRangeInteger: MaxRangeInteger,
-    fixedValueInteger: FixedValueInteger,
+//  rangeInteger: RangeInteger,
+//  minRangeInteger: MinRangeInteger,
+//  maxRangeInteger: MaxRangeInteger,
+//  fixedValueInteger: FixedValueInteger,
 
-    rangeShort: RangeShort,
-    minRangeShort: MinRangeShort,
-    maxRangeShort: MaxRangeShort,
-    fixedValueShort: FixedValueShort,
+//  rangeShort: RangeShort,
+//  minRangeShort: MinRangeShort,
+//  maxRangeShort: MaxRangeShort,
+//  fixedValueShort: FixedValueShort,
 
-    rangeLong: RangeLong,
-    minRangeLong: MinRangeLong,
-    maxRangeLong: MaxRangeLong,
-    fixedValueLong: FixedValueLong,
+//  rangeLong: RangeLong,
+//  minRangeLong: MinRangeLong,
+//  maxRangeLong: MaxRangeLong,
+//  fixedValueLong: FixedValueLong,
 
-    rangeByte: RangeByte,
-    minRangeByte: MinRangeByte,
-    maxRangeByte: MaxRangeByte,
-    fixedValueByte: FixedValueByte,
+//  rangeByte: RangeByte,
+//  minRangeByte: MinRangeByte,
+//  maxRangeByte: MaxRangeByte,
+//  fixedValueByte: FixedValueByte,
 
-    conBList: ConBList,
-    lengthList: LengthList,
+//  conBList: ConBList,
+//  lengthList: LengthList,
 
     // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
     //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // conBSet: ConBSet,
+    conBSet: ConBSet,
 
-    conBMap: ConBMap,
-    lengthMap: LengthMap,
+//  conBMap: ConBMap,
+//  lengthMap: LengthMap,
 
-    mapOfMapOfListOfListOfConB: MapOfMapOfListOfListOfConB,
+//  mapOfMapOfListOfListOfConB: MapOfMapOfListOfListOfConB,
 
-    constrainedUnion: ConstrainedUnion,
-    enumString: EnumString,
+//  constrainedUnion: ConstrainedUnion,
+//  enumString: EnumString,
 
-    listOfLengthString: ListOfLengthString,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfLengthString: SetOfLengthString,
-    mapOfLengthString: MapOfLengthString,
+//  listOfLengthString: ListOfLengthString,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfLengthString: SetOfLengthString,
+//  mapOfLengthString: MapOfLengthString,
 
-    listOfRangeInteger: ListOfRangeInteger,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfRangeInteger: SetOfRangeInteger,
-    mapOfRangeInteger: MapOfRangeInteger,
+//  listOfRangeInteger: ListOfRangeInteger,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfRangeInteger: SetOfRangeInteger,
+//  mapOfRangeInteger: MapOfRangeInteger,
 
-    listOfRangeShort: ListOfRangeShort,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfRangeShort: SetOfRangeShort,
-    mapOfRangeShort: MapOfRangeShort,
+//  listOfRangeShort: ListOfRangeShort,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfRangeShort: SetOfRangeShort,
+//  mapOfRangeShort: MapOfRangeShort,
 
-    listOfRangeLong: ListOfRangeLong,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfRangeLong: SetOfRangeLong,
-    mapOfRangeLong: MapOfRangeLong,
+//  listOfRangeLong: ListOfRangeLong,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfRangeLong: SetOfRangeLong,
+//  mapOfRangeLong: MapOfRangeLong,
 
-    listOfRangeByte: ListOfRangeByte,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfRangeByte: SetOfRangeByte,
-    mapOfRangeByte: MapOfRangeByte,
+//  listOfRangeByte: ListOfRangeByte,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfRangeByte: SetOfRangeByte,
+//  mapOfRangeByte: MapOfRangeByte,
 
-    nonStreamingBlob: NonStreamingBlob
+//  nonStreamingBlob: NonStreamingBlob
 
-    patternString: PatternString,
-    mapOfPatternString: MapOfPatternString,
-    listOfPatternString: ListOfPatternString,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfPatternString: SetOfPatternString,
+//  patternString: PatternString,
+//  mapOfPatternString: MapOfPatternString,
+//  listOfPatternString: ListOfPatternString,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfPatternString: SetOfPatternString,
 
-    lengthLengthPatternString: LengthPatternString,
-    mapOfLengthPatternString: MapOfLengthPatternString,
-    listOfLengthPatternString: ListOfLengthPatternString
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // setOfLengthPatternString: SetOfLengthPatternString,
+//  lengthLengthPatternString: LengthPatternString,
+//  mapOfLengthPatternString: MapOfLengthPatternString,
+//  listOfLengthPatternString: ListOfLengthPatternString
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // setOfLengthPatternString: SetOfLengthPatternString,
 
-    lengthListOfPatternString: LengthListOfPatternString,
-    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
-    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-    // lengthSetOfPatternString: LengthSetOfPatternString,
+//  lengthListOfPatternString: LengthListOfPatternString,
+//  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+//  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+//  // lengthSetOfPatternString: LengthSetOfPatternString,
 }
 
 map MapOfLengthString {
@@ -847,13 +847,13 @@ list LengthList {
 
 // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
 //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
-// set ConBSet {
-//     member: NestedSet
-// }
-//
-// set NestedSet {
-//     member: String
-// }
+set ConBSet {
+    member: NestedSet
+}
+
+set NestedSet {
+    member: String
+}
 
 map MapOfPatternString {
     key: PatternString,
