@@ -837,12 +837,16 @@ list RecursiveList {
 }
 
 list ConBList {
-    member: LengthList
+    member: ConBListInner
+}
+
+list ConBListInner {
+    member: ConB
 }
 
 @length(max: 69)
 list LengthList {
-    member: ConB
+    member: String
 }
 
 // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
@@ -851,7 +855,7 @@ set ConBSet {
     member: NestedSet
 }
 
-set NestedSet {
+set ConBSetInner {
     member: String
 }
 
