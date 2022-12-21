@@ -6,6 +6,7 @@
 package software.amazon.smithy.rust.codegen.server.smithy.generators
 
 import software.amazon.smithy.codegen.core.Symbol
+import software.amazon.smithy.codegen.core.SymbolProvider
 import software.amazon.smithy.model.shapes.CollectionShape
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
@@ -20,8 +21,11 @@ import software.amazon.smithy.rust.codegen.core.rustlang.docs
 import software.amazon.smithy.rust.codegen.core.rustlang.documentShape
 import software.amazon.smithy.rust.codegen.core.rustlang.join
 import software.amazon.smithy.rust.codegen.core.rustlang.rust
+import software.amazon.smithy.rust.codegen.core.rustlang.rustBlock
 import software.amazon.smithy.rust.codegen.core.rustlang.rustTemplate
 import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
+import software.amazon.smithy.rust.codegen.core.smithy.expectRustMetadata
+import software.amazon.smithy.rust.codegen.core.smithy.generators.implBlock
 import software.amazon.smithy.rust.codegen.core.util.PANIC
 import software.amazon.smithy.rust.codegen.core.util.orNull
 import software.amazon.smithy.rust.codegen.server.smithy.PubCrateConstraintViolationSymbolProvider
@@ -73,11 +77,8 @@ class ConstrainedCollectionGenerator(
         val name = constrainedShapeSymbolProvider.toSymbol(shape).name
         val inner = "std::vec::Vec<#{ValueSymbol}>"
         val constraintViolation = constraintViolationSymbolProvider.toSymbol(shape)
-        val constrainedTypeVisibility = Visibility.publicIf(publicConstrainedTypes, Visibility.PUBCRATE)
-        val constrainedTypeMetadata = RustMetadata(
-            Attribute.Derives(setOf(RuntimeType.Debug, RuntimeType.Clone, RuntimeType.PartialEq)),
-            visibility = constrainedTypeVisibility,
-        )
+
+        val constrainedSymbol = symbolProvider.toSymbol(shape)
 
         val codegenScope = arrayOf(
             "ValueSymbol" to constrainedShapeSymbolProvider.toSymbol(model.expectShape(shape.member.target)),
@@ -88,33 +89,43 @@ class ConstrainedCollectionGenerator(
 
         writer.documentShape(shape, model)
         writer.docs(rustDocsConstrainedTypeEpilogue(name))
-        constrainedTypeMetadata.render(writer)
+        val metadata = constrainedSymbol.expectRustMetadata()
+        metadata.render(writer)
         writer.rustTemplate(
             """
             struct $name(pub(crate) $inner);
             """,
             *codegenScope,
         )
-        if (constrainedTypeVisibility == Visibility.PUBCRATE) {
-            Attribute.AllowUnused.render(writer)
-        }
 
-        writer.rustTemplate(
-            """
-            impl $name {
-                /// ${rustDocsInnerMethod(inner)}
-                pub fn inner(&self) -> &$inner {
-                    &self.0
-                }
-
+        writer.rustBlock("impl $name") {
+            if (metadata.visibility == Visibility.PUBLIC) {
+                writer.rustTemplate(
+                    """
+                    /// ${rustDocsInnerMethod(inner)}
+                    pub fn inner(&self) -> &$inner {
+                        &self.0
+                    }
+                    """,
+                    *codegenScope,
+                )
+            }
+            writer.rustTemplate(
+                """
                 /// ${rustDocsIntoInnerMethod(inner)}
                 pub fn into_inner(self) -> $inner {
                     self.0
                 }
 
                 #{ValidationFunctions:W}
-            }
+                """,
+                *codegenScope,
+                "ValidationFunctions" to constraintsInfo.map { it.validationFunctionDefinition(constraintViolation, inner) }.join("\n"),
+            )
+        }
 
+        writer.rustTemplate(
+            """
             impl #{TryFrom}<$inner> for $name {
                 type Error = #{ConstraintViolation};
 
@@ -134,7 +145,6 @@ class ConstrainedCollectionGenerator(
             """,
             *codegenScope,
             "ConstraintChecks" to constraintsInfo.map { it.tryFromCheck }.join("\n"),
-            "ValidationFunctions" to constraintsInfo.map { it.validationFunctionDefinition(constraintViolation, inner) }.join("\n"),
         )
 
         val innerShape = model.expectShape(shape.member.target)
@@ -175,21 +185,38 @@ class ConstrainedCollectionGenerator(
 }
 
 internal sealed class CollectionTraitInfo {
-    data class UniqueItems(val uniqueItemsTrait: UniqueItemsTrait) : CollectionTraitInfo() {
+    data class UniqueItems(val uniqueItemsTrait: UniqueItemsTrait, val memberSymbol: Symbol) : CollectionTraitInfo() {
         override fun toTraitInfo(): TraitInfo =
             TraitInfo(
                 tryFromCheck = {
-                    rust("Self::check_length(value.len())?;")
+                    rust("let value = Self::check_unique_items(value)?;")
                 },
                 constraintViolationVariant = {
-                    docs("Constraint violation error when the list doesn't contain unique items")
-                    rust("UniqueItems")
+                    docs("Constraint violation error when the list does not contain unique items")
+                    // TODO Rationale.
+                    rustTemplate(
+                        """
+                        UniqueItems {
+                            /// A vector of indices into `original` pointing to all duplicate items. This vector has
+                            /// at least two elements.
+                            /// More specifically, for every element `idx_1` in `duplicates`, there exists another
+                            /// distinct element `idx_2` such that `original[idx_1] == original[idx_2]` is `true`.
+                            /// Nothing is guaranteed about the order of the indices.
+                            duplicates: #{Vec}<usize>,
+                            /// The original vector, that contains duplicate items.
+                            original: #{Vec}<#{MemberSymbol}>,
+                        }
+                        """,
+                        "Vec" to RuntimeType.Vec,
+                        "String" to RuntimeType.String,
+                        "MemberSymbol" to memberSymbol,
+                    )
                 },
                 asValidationExceptionField = {
                     rust(
                         """
-                        Self::UniqueItems => crate::model::ValidationExceptionField {
-                            message: format!("${uniqueItemsTrait.validationErrorMessage()}", length, &path),
+                        Self::UniqueItems { duplicates, .. } => crate::model::ValidationExceptionField {
+                            message: format!("${uniqueItemsTrait.validationErrorMessage()}", &duplicates, &path),
                             path,
                         },
                         """,
@@ -197,12 +224,34 @@ internal sealed class CollectionTraitInfo {
                 },
                 validationFunctionDefinition = { constraintViolation, _ ->
                     {
+                        // TODO Explain why we can use `HashMap`.
+                        // TODO Unit tests.
                         rustTemplate(
                             """
-                            fn check_unique_items(length: usize) -> Result<(), #{ConstraintViolation}> {
-                                Ok(())
+                            fn check_unique_items(items: #{Vec}<#{MemberSymbol}>) -> Result<#{Vec}<#{MemberSymbol}>, #{ConstraintViolation}> {
+                                let mut seen = #{HashMap}::new();
+                                let mut duplicates = #{Vec}::new();
+                                for (idx, item) in items.iter().enumerate() {
+                                    if let Some(prev_idx) = seen.insert(item, idx) {
+                                        duplicates.push(prev_idx);
+                                    }
+                                }
+
+                                for last_idx in seen.into_values() {
+                                    duplicates.push(last_idx);
+                                }
+
+                                if !duplicates.is_empty() {
+                                    debug_assert!(duplicates.len() >= 2);
+                                    Err(#{ConstraintViolation}::UniqueItems { duplicates, original: items })
+                                } else {
+                                    Ok(items)
+                                }
                             }
                             """,
+                            "Vec" to RuntimeType.Vec,
+                            "HashMap" to RuntimeType.HashMap,
+                            "MemberSymbol" to memberSymbol,
                             "ConstraintViolation" to constraintViolation,
                         )
                     }
@@ -214,7 +263,7 @@ internal sealed class CollectionTraitInfo {
         override fun toTraitInfo(): TraitInfo =
             TraitInfo(
                 tryFromCheck = {
-                    rust("Self::check_length(value.len())?;")
+                    rust("Self::check_unique_items(value.len())?;")
                 },
                 constraintViolationVariant = {
                     docs("Constraint violation error when the list doesn't have the required length")
@@ -235,8 +284,11 @@ internal sealed class CollectionTraitInfo {
                         rustTemplate(
                             """
                             fn check_length(length: usize) -> Result<(), #{ConstraintViolation}> {
-                                // TODO
-                                Ok(())
+                                if ${lengthTrait.rustCondition("length")} {
+                                    Ok(())
+                                } else {
+                                    Err(#{ConstraintViolation}::Length(length))
+                                }
                             }
                             """,
                             "ConstraintViolation" to constraintViolation,
@@ -247,23 +299,25 @@ internal sealed class CollectionTraitInfo {
     }
 
     companion object {
-        private fun fromTrait(trait: Trait): CollectionTraitInfo =
-            when (trait) {
+        private fun fromTrait(trait: Trait, shape: CollectionShape, symbolProvider: SymbolProvider): CollectionTraitInfo {
+            check(shape.hasTrait(trait.toShapeId()))
+            return when (trait) {
                 is LengthTrait -> {
                     Length(trait)
                 }
                 is UniqueItemsTrait -> {
-                    UniqueItems(trait)
+                    UniqueItems(trait, symbolProvider.toSymbol(shape.member))
                 }
                 else -> {
                     PANIC("CollectionTraitInfo.fromTrait called with unsupported trait $trait")
                 }
             }
+        }
 
-        fun fromShape(shape: CollectionShape): List<TraitInfo> =
+        fun fromShape(shape: CollectionShape, symbolProvider: SymbolProvider): List<TraitInfo> =
             supportedCollectionConstraintTraits
                 .mapNotNull { shape.getTrait(it).orNull() }
-                .map(CollectionTraitInfo::fromTrait)
+                .map { trait -> fromTrait(trait, shape, symbolProvider) }
                 .map(CollectionTraitInfo::toTraitInfo)
     }
 

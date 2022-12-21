@@ -486,13 +486,18 @@ class ServerProtocolTestGenerator(
     ) {
         val (_, outputT) = operationInputOutputTypes[operationShape]!!
 
+        val panicMessage = "request should have been rejected, but it was accepted"
         rust("// Use the `OperationRegistryBuilder`")
         rustBlock("") {
             with(testCase.request) {
                 // TODO(https://github.com/awslabs/smithy/issues/1102): `uri` should probably not be an `Optional`.
                 renderHttpRequest(uri.get(), method, headers, body.orNull(), queryParams, host.orNull())
             }
-            makeRequest(operationShape, this, writable("todo!() as $outputT"))
+            makeRequest(
+                operationShape,
+                this,
+                writable("""panic!("$panicMessage") as $outputT"""),
+            )
             checkResponse(this, testCase.response)
         }
 
@@ -502,7 +507,12 @@ class ServerProtocolTestGenerator(
                 // TODO(https://github.com/awslabs/smithy/issues/1102): `uri` should probably not be an `Optional`.
                 renderHttpRequest(uri.get(), method, headers, body.orNull(), queryParams, host.orNull())
             }
-            makeRequest2(operationShape, operationSymbol, this, writable("todo!() as $outputT"))
+            makeRequest2(
+                operationShape,
+                operationSymbol,
+                this,
+                writable("""panic!("$panicMessage") as $outputT"""),
+            )
             checkResponse(this, testCase.response)
         }
     }
@@ -929,16 +939,6 @@ class ServerProtocolTestGenerator(
             FailingTest(RestJson, "RestJsonWithBodyExpectsApplicationJsonContentType", TestType.MalformedRequest),
             FailingTest(RestJson, "RestJsonBodyMalformedListNullItem", TestType.MalformedRequest),
             FailingTest(RestJson, "RestJsonBodyMalformedMapNullValue", TestType.MalformedRequest),
-
-            // Deprioritized, sets don't exist in Smithy 2.0.
-            // They have the exact same semantics as list shapes with `@uniqueItems`,
-            // so we could implement them as such once we've added support for constraint traits.
-            //
-            // See https://github.com/awslabs/smithy/issues/1266#issuecomment-1169543051.
-            // See https://awslabs.github.io/smithy/2.0/guides/migrating-idl-1-to-2.html#convert-set-shapes-to-list-shapes.
-            FailingTest(RestJson, "RestJsonMalformedSetDuplicateItems", TestType.MalformedRequest),
-            FailingTest(RestJson, "RestJsonMalformedSetNullItem", TestType.MalformedRequest),
-            FailingTest(RestJson, "RestJsonMalformedSetDuplicateBlobs", TestType.MalformedRequest),
 
             FailingTest(RestJson, "RestJsonMalformedUnionNoFieldsSet", TestType.MalformedRequest),
 

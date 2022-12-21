@@ -74,7 +74,11 @@ class RustCodegenServerPlugin : SmithyBuildPlugin {
                 .let { StreamingShapeSymbolProvider(it, model) }
                 // Add Rust attributes (like `#[derive(PartialEq)]`) to generated shapes
                 .let { BaseSymbolMetadataProvider(it, model, additionalAttributes = listOf()) }
-                // Streaming shapes need different derives (e.g. they cannot derive Eq)
+                // `#[derive(Hash)]` if possible
+                .let { DeriveEqAndHashSymbolMetadataProvider(it, model) }
+                // Constrained shapes generate newtypes that need the same derives we place on types generated from aggregate shapes.
+                .let { ConstrainedShapeSymbolMetadataProvider(it, model, constrainedTypes) }
+                // Streaming shapes need different derives (e.g. they cannot derive `PartialEq`)
                 .let { StreamingShapeMetadataProvider(it, model) }
                 // Rename shapes that clash with Rust reserved words & and other SDK specific features e.g. `send()` cannot
                 // be the name of an operation input

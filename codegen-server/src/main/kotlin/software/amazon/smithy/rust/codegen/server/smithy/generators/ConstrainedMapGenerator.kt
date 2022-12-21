@@ -61,9 +61,10 @@ class ConstrainedMapGenerator(
         val inner = "std::collections::HashMap<#{KeySymbol}, #{ValueSymbol}>"
         val constraintViolation = constraintViolationSymbolProvider.toSymbol(shape)
 
+        // TODO Delegate RustMetadata entirely to the symbol provider
         val constrainedTypeVisibility = Visibility.publicIf(publicConstrainedTypes, Visibility.PUBCRATE)
         val constrainedTypeMetadata = RustMetadata(
-            Attribute.Derives(setOf(RuntimeType.Debug, RuntimeType.Clone, RuntimeType.PartialEq)),
+            Attribute.Derives(setOf(RuntimeType.Debug, RuntimeType.Clone, RuntimeType.PartialEq, RuntimeType.Hash, RuntimeType.Hash)),
             visibility = constrainedTypeVisibility,
         )
 

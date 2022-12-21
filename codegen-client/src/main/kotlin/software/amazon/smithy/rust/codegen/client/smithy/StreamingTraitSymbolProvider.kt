@@ -8,7 +8,10 @@ package software.amazon.smithy.rust.codegen.client.smithy
 import software.amazon.smithy.codegen.core.Symbol
 import software.amazon.smithy.model.Model
 import software.amazon.smithy.model.shapes.BlobShape
+import software.amazon.smithy.model.shapes.ListShape
+import software.amazon.smithy.model.shapes.MapShape
 import software.amazon.smithy.model.shapes.MemberShape
+import software.amazon.smithy.model.shapes.NumberShape
 import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StringShape
 import software.amazon.smithy.model.shapes.StructureShape
@@ -34,7 +37,7 @@ class StreamingShapeSymbolProvider(private val base: RustSymbolProvider, private
     WrappingSymbolProvider(base) {
     override fun toSymbol(shape: Shape): Symbol {
         val initial = base.toSymbol(shape)
-        // We are only targetting member shapes
+        // We are only targeting member shapes
         if (shape !is MemberShape) {
             return initial
         }
@@ -67,10 +70,6 @@ class StreamingShapeMetadataProvider(
     private val base: RustSymbolProvider,
     private val model: Model,
 ) : SymbolMetadataProvider(base) {
-    override fun memberMeta(memberShape: MemberShape): RustMetadata {
-        return base.toSymbol(memberShape).expectRustMetadata()
-    }
-
     override fun structureMeta(structureShape: StructureShape): RustMetadata {
         val baseMetadata = base.toSymbol(structureShape).expectRustMetadata()
         return if (structureShape.hasStreamingMember(model)) {
@@ -85,7 +84,11 @@ class StreamingShapeMetadataProvider(
         } else baseMetadata
     }
 
-    override fun enumMeta(stringShape: StringShape): RustMetadata {
-        return base.toSymbol(stringShape).expectRustMetadata()
-    }
+    override fun memberMeta(memberShape: MemberShape) = base.toSymbol(memberShape).expectRustMetadata()
+    override fun enumMeta(stringShape: StringShape) = base.toSymbol(stringShape).expectRustMetadata()
+
+    override fun listMeta(listShape: ListShape) = base.toSymbol(listShape).expectRustMetadata()
+    override fun mapMeta(mapShape: MapShape) = base.toSymbol(mapShape).expectRustMetadata()
+    override fun stringMeta(stringShape: StringShape) = base.toSymbol(stringShape).expectRustMetadata()
+    override fun numberMeta(numberShape: NumberShape) = base.toSymbol(numberShape).expectRustMetadata()
 }

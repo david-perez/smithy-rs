@@ -414,6 +414,7 @@ sealed class Attribute {
     companion object {
         val AllowDeadCode = Custom("allow(dead_code)")
         val AllowDeprecated = Custom("allow(deprecated)")
+        // TODO Remove this lint, dead_code should suffice: https://stackoverflow.com/questions/64556750/what-is-the-difference-between-the-dead-code-and-unused-lints
         val AllowUnused = Custom("allow(unused)")
         val AllowUnusedMut = Custom("allow(unused_mut)")
         val DocHidden = Custom("doc(hidden)")
@@ -459,6 +460,8 @@ sealed class Attribute {
             }
             writer.write(")]")
         }
+
+        operator fun plus(rhs: Derives): Derives = Derives(this.derives + rhs.derives)
 
         companion object {
             val Empty = Derives(setOf())

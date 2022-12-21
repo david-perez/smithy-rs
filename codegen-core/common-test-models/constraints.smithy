@@ -852,7 +852,7 @@ list LengthList {
 // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
 //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
 set ConBSet {
-    member: NestedSet
+    member: ConBSetInner
 }
 
 set ConBSetInner {
