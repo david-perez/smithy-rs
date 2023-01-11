@@ -23,7 +23,7 @@ import software.amazon.smithy.rust.codegen.server.smithy.traits.isReachableFromO
  */
 private fun enumFromStringFn(enumSymbol: Symbol, data: String): Writable = writable {
     rust(
-        """#T::try_from($data).expect("This is used in tests ONLY")""",
+        """#T::try_from($data).expect("this is only used in tests")""",
         enumSymbol,
     )
 }

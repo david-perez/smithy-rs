@@ -222,6 +222,8 @@ internal sealed class CollectionTraitInfo {
                     {
                         // TODO Explain why we can use `HashMap`.
                         // TODO Unit tests.
+                        // TODO Commented out code is wrong; fix it so we get the full list of duplicates once we have
+                        //  tests
                         rustTemplate(
                             """
                             fn check_unique_items(items: #{Vec}<#{MemberSymbol}>) -> Result<#{Vec}<#{MemberSymbol}>, #{ConstraintViolation}> {
@@ -233,9 +235,9 @@ internal sealed class CollectionTraitInfo {
                                     }
                                 }
 
-                                for last_idx in seen.into_values() {
-                                    duplicates.push(last_idx);
-                                }
+                                // for last_idx in seen.into_values() {
+                                //     duplicates.push(last_idx);
+                                // }
 
                                 if !duplicates.is_empty() {
                                     debug_assert!(duplicates.len() >= 2);

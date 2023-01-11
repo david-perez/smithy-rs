@@ -31,6 +31,7 @@ import software.amazon.smithy.model.shapes.UnionShape
 import software.amazon.smithy.model.traits.EnumTrait
 import software.amazon.smithy.model.traits.HttpPrefixHeadersTrait
 import software.amazon.smithy.model.traits.StreamingTrait
+import software.amazon.smithy.model.traits.UniqueItemsTrait
 import software.amazon.smithy.rust.codegen.core.rustlang.CargoDependency
 import software.amazon.smithy.rust.codegen.core.rustlang.RustType
 import software.amazon.smithy.rust.codegen.core.rustlang.RustWriter
@@ -277,6 +278,17 @@ open class Instantiator(
                 renderMember(this, shape.member, v, ctx)
                 rust(",")
             }
+        }
+
+        // TODO We need a way for servers to call `.try_into()` to convert into constrained types when instantiating
+        //  values for constrained shapes. It turns out that the only protocol tests that use constrained shapes are the
+        //  `rest_json` ones, because they use `set` shapes. So we're handling that here in a very ad-hoc manner: we
+        //  explicitly check for the `@uniqueItems` trait, and we're checking `defaultsForRequiredFields` as proxy for
+        //  "we're generating a server SDK", because that field is set to true only by servers...
+        //  I think the way to solve this is to introduce a customizations mechanism like we've done before in e.g.
+        //  `JsonParserGenerator`.
+        if (shape.hasTrait<UniqueItemsTrait>() && defaultsForRequiredFields) {
+            writer.rust(""".try_into().expect("this is only used in tests")""")
         }
     }
 
