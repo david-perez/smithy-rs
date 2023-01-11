@@ -263,7 +263,7 @@ internal sealed class CollectionTraitInfo {
         override fun toTraitInfo(): TraitInfo =
             TraitInfo(
                 tryFromCheck = {
-                    rust("Self::check_unique_items(value.len())?;")
+                    rust("Self::check_length(value.len())?;")
                 },
                 constraintViolationVariant = {
                     docs("Constraint violation error when the list doesn't have the required length")
