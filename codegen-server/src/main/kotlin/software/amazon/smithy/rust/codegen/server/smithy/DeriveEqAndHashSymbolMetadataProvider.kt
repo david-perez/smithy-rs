@@ -1,6 +1,7 @@
 package software.amazon.smithy.rust.codegen.server.smithy
 
 import software.amazon.smithy.model.Model
+import software.amazon.smithy.model.neighbor.RelationshipDirection
 import software.amazon.smithy.model.neighbor.Walker
 import software.amazon.smithy.model.shapes.DocumentShape
 import software.amazon.smithy.model.shapes.DoubleShape
@@ -13,11 +14,13 @@ import software.amazon.smithy.model.shapes.Shape
 import software.amazon.smithy.model.shapes.StringShape
 import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
+import software.amazon.smithy.model.traits.StreamingTrait
 import software.amazon.smithy.rust.codegen.core.rustlang.RustMetadata
 import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
 import software.amazon.smithy.rust.codegen.core.smithy.RustSymbolProvider
 import software.amazon.smithy.rust.codegen.core.smithy.SymbolMetadataProvider
 import software.amazon.smithy.rust.codegen.core.smithy.expectRustMetadata
+import software.amazon.smithy.rust.codegen.core.util.hasTrait
 
 // TODO Docs
 // TODO Test
@@ -25,13 +28,14 @@ class DeriveEqAndHashSymbolMetadataProvider(
     private val base: RustSymbolProvider,
     val model: Model,
 ): SymbolMetadataProvider(base) {
+    // TODO Use DirectedWalker
     private val walker = Walker(model)
 
     private fun addDeriveEqAndHashIfPossible(shape: Shape): RustMetadata {
         check(shape !is MemberShape)
         val baseMetadata = base.toSymbol(shape).expectRustMetadata()
-        return if (walker.walkShapes(shape)
-                .any { it is FloatShape || it is DoubleShape || it is DocumentShape }
+        return if (walker.walkShapes(shape) { rel -> rel.direction == RelationshipDirection.DIRECTED }
+                .any { it is FloatShape || it is DoubleShape || it is DocumentShape || it.hasTrait<StreamingTrait>() }
         ) {
             baseMetadata
         } else {

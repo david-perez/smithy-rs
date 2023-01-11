@@ -11,34 +11,34 @@ use smithy.framework#ValidationException
 service ConstraintsService {
     operations: [
         ConstrainedShapesOperation,
-//      ConstrainedHttpBoundShapesOperation,
-//      ConstrainedRecursiveShapesOperation,
-//      // `httpQueryParams` and `httpPrefixHeaders` are structurually
-//      // exclusive, so we need one operation per target shape type
-//      // combination.
-//      QueryParamsTargetingLengthMapOperation,
-//      QueryParamsTargetingMapOfLengthStringOperation,
-//      QueryParamsTargetingMapOfListOfLengthStringOperation,
-//      QueryParamsTargetingMapOfSetOfLengthStringOperation,
-//      QueryParamsTargetingMapOfLengthListOfPatternStringOperation,
-//      QueryParamsTargetingMapOfListOfEnumStringOperation,
+        ConstrainedHttpBoundShapesOperation,
+        ConstrainedRecursiveShapesOperation,
+        // `httpQueryParams` and `httpPrefixHeaders` are structurually
+        // exclusive, so we need one operation per target shape type
+        // combination.
+        QueryParamsTargetingLengthMapOperation,
+        QueryParamsTargetingMapOfLengthStringOperation,
+        QueryParamsTargetingMapOfListOfLengthStringOperation,
+        QueryParamsTargetingMapOfSetOfLengthStringOperation,
+        QueryParamsTargetingMapOfLengthListOfPatternStringOperation,
+        QueryParamsTargetingMapOfListOfEnumStringOperation,
 
-//      QueryParamsTargetingMapOfPatternStringOperation,
-//      QueryParamsTargetingMapOfListOfPatternStringOperation,
-//      QueryParamsTargetingMapOfLengthPatternStringOperation,
-//      QueryParamsTargetingMapOfListOfLengthPatternStringOperation,
+        QueryParamsTargetingMapOfPatternStringOperation,
+        QueryParamsTargetingMapOfListOfPatternStringOperation,
+        QueryParamsTargetingMapOfLengthPatternStringOperation,
+        QueryParamsTargetingMapOfListOfLengthPatternStringOperation,
 
-//      HttpPrefixHeadersTargetingLengthMapOperation,
+        HttpPrefixHeadersTargetingLengthMapOperation,
 
-//      QueryParamsTargetingMapOfEnumStringOperation,
-//      QueryParamsTargetingMapOfListOfEnumStringOperation,
-//      // TODO(https://github.com/awslabs/smithy-rs/issues/1431)
-//      // HttpPrefixHeadersTargetingMapOfEnumStringOperation,
+        QueryParamsTargetingMapOfEnumStringOperation,
+        QueryParamsTargetingMapOfListOfEnumStringOperation,
+        // TODO(https://github.com/awslabs/smithy-rs/issues/1431)
+        // HttpPrefixHeadersTargetingMapOfEnumStringOperation,
 
-//      NonStreamingBlobOperation,
+        NonStreamingBlobOperation,
 
-//      StreamingBlobOperation,
-//      EventStreamsOperation,
+        StreamingBlobOperation,
+        EventStreamsOperation,
     ],
 }
 
@@ -417,84 +417,84 @@ blob StreamingBlob
 blob NonStreamingBlob
 
 structure ConA {
-//  @required
-//  conB: ConB,
+    @required
+    conB: ConB,
 
-//  optConB: ConB,
+    optConB: ConB,
 
-//  lengthString: LengthString,
-//  minLengthString: MinLengthString,
-//  maxLengthString: MaxLengthString,
-//  fixedLengthString: FixedLengthString,
+    lengthString: LengthString,
+    minLengthString: MinLengthString,
+    maxLengthString: MaxLengthString,
+    fixedLengthString: FixedLengthString,
 
-//  rangeInteger: RangeInteger,
-//  minRangeInteger: MinRangeInteger,
-//  maxRangeInteger: MaxRangeInteger,
-//  fixedValueInteger: FixedValueInteger,
+    rangeInteger: RangeInteger,
+    minRangeInteger: MinRangeInteger,
+    maxRangeInteger: MaxRangeInteger,
+    fixedValueInteger: FixedValueInteger,
 
-//  rangeShort: RangeShort,
-//  minRangeShort: MinRangeShort,
-//  maxRangeShort: MaxRangeShort,
-//  fixedValueShort: FixedValueShort,
+    rangeShort: RangeShort,
+    minRangeShort: MinRangeShort,
+    maxRangeShort: MaxRangeShort,
+    fixedValueShort: FixedValueShort,
 
-//  rangeLong: RangeLong,
-//  minRangeLong: MinRangeLong,
-//  maxRangeLong: MaxRangeLong,
-//  fixedValueLong: FixedValueLong,
+    rangeLong: RangeLong,
+    minRangeLong: MinRangeLong,
+    maxRangeLong: MaxRangeLong,
+    fixedValueLong: FixedValueLong,
 
-//  rangeByte: RangeByte,
-//  minRangeByte: MinRangeByte,
-//  maxRangeByte: MaxRangeByte,
-//  fixedValueByte: FixedValueByte,
+    rangeByte: RangeByte,
+    minRangeByte: MinRangeByte,
+    maxRangeByte: MaxRangeByte,
+    fixedValueByte: FixedValueByte,
 
-//  conBList: ConBList,
-//  lengthList: LengthList,
+    conBList: ConBList,
+    lengthList: LengthList,
 
     conBSet: ConBSet,
 
-//  conBMap: ConBMap,
-//  lengthMap: LengthMap,
+    conBMap: ConBMap,
+    lengthMap: LengthMap,
 
-//  mapOfMapOfListOfListOfConB: MapOfMapOfListOfListOfConB,
+    mapOfMapOfListOfListOfConB: MapOfMapOfListOfListOfConB,
     sparseConstrainedMap: SparseMap,
     sparseConstrainedList: SparseList,
 
-//  constrainedUnion: ConstrainedUnion,
-//  enumString: EnumString,
+    constrainedUnion: ConstrainedUnion,
+    enumString: EnumString,
 
-//  listOfLengthString: ListOfLengthString,
+    listOfLengthString: ListOfLengthString,
     setOfLengthString: SetOfLengthString,
-//  mapOfLengthString: MapOfLengthString,
+    mapOfLengthString: MapOfLengthString,
 
-//  listOfRangeInteger: ListOfRangeInteger,
+    listOfRangeInteger: ListOfRangeInteger,
     setOfRangeInteger: SetOfRangeInteger,
-//  mapOfRangeInteger: MapOfRangeInteger,
+    mapOfRangeInteger: MapOfRangeInteger,
 
-//  listOfRangeShort: ListOfRangeShort,
+    listOfRangeShort: ListOfRangeShort,
     setOfRangeShort: SetOfRangeShort,
-//  mapOfRangeShort: MapOfRangeShort,
+    mapOfRangeShort: MapOfRangeShort,
 
-//  listOfRangeLong: ListOfRangeLong,
+    listOfRangeLong: ListOfRangeLong,
     setOfRangeLong: SetOfRangeLong,
-//  mapOfRangeLong: MapOfRangeLong,
+    mapOfRangeLong: MapOfRangeLong,
 
-//  listOfRangeByte: ListOfRangeByte,
+    listOfRangeByte: ListOfRangeByte,
     setOfRangeByte: SetOfRangeByte,
-//  mapOfRangeByte: MapOfRangeByte,
+    mapOfRangeByte: MapOfRangeByte,
 
-//  nonStreamingBlob: NonStreamingBlob
+    nonStreamingBlob: NonStreamingBlob
 
-//  patternString: PatternString,
-//  mapOfPatternString: MapOfPatternString,
-//  listOfPatternString: ListOfPatternString,
+    patternString: PatternString,
+    mapOfPatternString: MapOfPatternString,
+    listOfPatternString: ListOfPatternString,
     setOfPatternString: SetOfPatternString,
 
-//  lengthLengthPatternString: LengthPatternString,
-//  mapOfLengthPatternString: MapOfLengthPatternString,
-//  listOfLengthPatternString: ListOfLengthPatternString
+    lengthLengthPatternString: LengthPatternString,
+    mapOfLengthPatternString: MapOfLengthPatternString,
+    listOfLengthPatternString: ListOfLengthPatternString
     setOfLengthPatternString: SetOfLengthPatternString,
 
-//  lengthListOfPatternString: LengthListOfPatternString,
+    lengthListOfPatternString: LengthListOfPatternString,
     lengthSetOfPatternString: LengthSetOfPatternString,
 }
 

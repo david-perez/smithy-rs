@@ -18,6 +18,7 @@ import software.amazon.smithy.rust.codegen.core.rustlang.docs
 import software.amazon.smithy.rust.codegen.core.rustlang.documentShape
 import software.amazon.smithy.rust.codegen.core.rustlang.rustTemplate
 import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
+import software.amazon.smithy.rust.codegen.core.smithy.expectRustMetadata
 import software.amazon.smithy.rust.codegen.core.util.expectTrait
 import software.amazon.smithy.rust.codegen.server.smithy.PubCrateConstraintViolationSymbolProvider
 import software.amazon.smithy.rust.codegen.server.smithy.ServerCodegenContext
@@ -60,13 +61,7 @@ class ConstrainedMapGenerator(
         val name = constrainedShapeSymbolProvider.toSymbol(shape).name
         val inner = "std::collections::HashMap<#{KeySymbol}, #{ValueSymbol}>"
         val constraintViolation = constraintViolationSymbolProvider.toSymbol(shape)
-
-        // TODO Delegate RustMetadata entirely to the symbol provider
-        val constrainedTypeVisibility = Visibility.publicIf(publicConstrainedTypes, Visibility.PUBCRATE)
-        val constrainedTypeMetadata = RustMetadata(
-            Attribute.Derives(setOf(RuntimeType.Debug, RuntimeType.Clone, RuntimeType.PartialEq, RuntimeType.Hash, RuntimeType.Hash)),
-            visibility = constrainedTypeVisibility,
-        )
+        val constrainedSymbol = symbolProvider.toSymbol(shape)
 
         val codegenScope = arrayOf(
             "KeySymbol" to constrainedShapeSymbolProvider.toSymbol(model.expectShape(shape.key.target)),
@@ -78,9 +73,12 @@ class ConstrainedMapGenerator(
 
         writer.documentShape(shape, model)
         writer.docs(rustDocsConstrainedTypeEpilogue(name))
-        constrainedTypeMetadata.render(writer)
+        val metadata = constrainedSymbol.expectRustMetadata()
+        metadata.render(writer)
         writer.rustTemplate("struct $name(pub(crate) $inner);", *codegenScope)
-        if (constrainedTypeVisibility == Visibility.PUBCRATE) {
+        // TODO Use the same strategy as in `ConstrainedCollectionGenerator.kt`: `metadata.visibility == Visibility
+        //  .PUBLIC` inside impl block
+        if (metadata.visibility == Visibility.PUBCRATE) {
             Attribute.AllowUnused.render(writer)
         }
         writer.rustTemplate(
