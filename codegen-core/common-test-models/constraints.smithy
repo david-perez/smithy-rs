@@ -476,6 +476,8 @@ structure ConA {
 //  lengthMap: LengthMap,
 
 //  mapOfMapOfListOfListOfConB: MapOfMapOfListOfListOfConB,
+    sparseConstrainedMap: SparseMap,
+    sparseConstrainedList: SparseList,
 
 //  constrainedUnion: ConstrainedUnion,
 //  enumString: EnumString,
@@ -530,6 +532,22 @@ structure ConA {
 //  // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
 //  //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
 //  // lengthSetOfPatternString: LengthSetOfPatternString,
+}
+
+@sparse
+list SparseList {
+    member: LengthString
+}
+
+@sparse
+map SparseMap {
+    key: String,
+    value: UniqueItemsList
+}
+
+@uniqueItems
+list UniqueItemsList {
+    member: String
 }
 
 map MapOfLengthString {

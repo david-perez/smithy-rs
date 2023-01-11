@@ -35,7 +35,21 @@ class DeriveEqAndHashSymbolMetadataProvider(
         ) {
             baseMetadata
         } else {
-            baseMetadata.withDerives(RuntimeType.Eq, RuntimeType.Hash)
+            var ret = baseMetadata
+            if (ret.derives.derives.contains(RuntimeType.PartialEq)) {
+               // We can only derive `Eq` if the type implements `PartialEq`. Not every shape that does not reach a
+               // floating point or a document shape does; for example, streaming shapes cannot be `PartialEq`, see
+               // [StreamingShapeMetadataProvider].
+               ret = ret.withDerives(RuntimeType.Eq)
+            }
+
+            // `std::collections::HashMap` does not implement `std::hash::Hash`:
+            // https://github.com/awslabs/smithy/issues/1567
+            if (walker.walkShapes(shape).none { it is MapShape }) {
+                ret = ret.withDerives(RuntimeType.Hash)
+            }
+
+            return ret
         }
     }
 

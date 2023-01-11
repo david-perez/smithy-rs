@@ -106,7 +106,6 @@ class ConstrainedShapeSymbolProvider(
             }
 
             is StringShape, is IntegerShape, is ShortShape, is LongShape, is ByteShape -> {
-                val baseSymbol = base.toSymbol(shape)
                 if (shape.isDirectlyConstrained(base)) {
                     val rustType = RustType.Opaque(shape.contextName(serviceShape).toPascalCase())
                     symbolBuilder(shape, rustType).locatedIn(ModelsModule).build()
