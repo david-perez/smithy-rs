@@ -1,8 +1,6 @@
 package software.amazon.smithy.rust.codegen.server.smithy
 
 import software.amazon.smithy.model.Model
-import software.amazon.smithy.model.neighbor.RelationshipDirection
-import software.amazon.smithy.model.neighbor.Walker
 import software.amazon.smithy.model.shapes.DocumentShape
 import software.amazon.smithy.model.shapes.DoubleShape
 import software.amazon.smithy.model.shapes.FloatShape
