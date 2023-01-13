@@ -265,8 +265,8 @@ internal sealed class CollectionTraitInfo {
                             fn check_unique_items(items: #{Vec}<#{MemberSymbol}>) -> Result<#{Vec}<#{MemberSymbol}>, #{ConstraintViolation}> {
                                 let mut seen = #{HashMap}::new();
                                 let mut duplicates = #{Vec}::new();
-                                for idx in 0..items.len() {
-                                    if let Some(prev_idx) = seen.insert(&items[idx], idx) {
+                                for (idx, item) in items.iter().enumerate() {
+                                    if let Some(prev_idx) = seen.insert(item, idx) {
                                         duplicates.push(prev_idx);
                                     }
                                 }
