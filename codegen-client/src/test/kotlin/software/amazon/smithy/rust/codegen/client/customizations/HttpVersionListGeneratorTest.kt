@@ -7,20 +7,18 @@ package software.amazon.smithy.rust.codegen.client.customizations
 
 import org.junit.jupiter.api.Test
 import software.amazon.smithy.rust.codegen.client.smithy.ClientCodegenContext
-import software.amazon.smithy.rust.codegen.client.smithy.customize.RustCodegenDecorator
+import software.amazon.smithy.rust.codegen.client.smithy.customize.ClientCodegenDecorator
 import software.amazon.smithy.rust.codegen.client.smithy.generators.config.ConfigCustomization
 import software.amazon.smithy.rust.codegen.client.smithy.generators.config.EventStreamSigningConfig
 import software.amazon.smithy.rust.codegen.client.smithy.generators.config.ServiceConfig
-import software.amazon.smithy.rust.codegen.client.smithy.generators.protocol.ClientProtocolGenerator
 import software.amazon.smithy.rust.codegen.client.testutil.clientIntegrationTest
+import software.amazon.smithy.rust.codegen.core.rustlang.Attribute
 import software.amazon.smithy.rust.codegen.core.rustlang.Writable
 import software.amazon.smithy.rust.codegen.core.rustlang.rust
 import software.amazon.smithy.rust.codegen.core.rustlang.rustTemplate
 import software.amazon.smithy.rust.codegen.core.rustlang.writable
-import software.amazon.smithy.rust.codegen.core.smithy.CodegenContext
 import software.amazon.smithy.rust.codegen.core.smithy.RuntimeConfig
 import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
-import software.amazon.smithy.rust.codegen.core.testutil.TokioTest
 import software.amazon.smithy.rust.codegen.core.testutil.asSmithyModel
 import software.amazon.smithy.rust.codegen.core.testutil.integrationTest
 
@@ -58,7 +56,7 @@ internal class HttpVersionListGeneratorTest {
         clientIntegrationTest(model) { clientCodegenContext, rustCrate ->
             val moduleName = clientCodegenContext.moduleUseName()
             rustCrate.integrationTest("http_version_list") {
-                TokioTest.render(this)
+                Attribute.TokioTest.render(this)
                 rust(
                     """
                     async fn test_http_version_list_defaults() {
@@ -109,7 +107,7 @@ internal class HttpVersionListGeneratorTest {
         clientIntegrationTest(model) { clientCodegenContext, rustCrate ->
             val moduleName = clientCodegenContext.moduleUseName()
             rustCrate.integrationTest("validate_http") {
-                TokioTest.render(this)
+                Attribute.TokioTest.render(this)
                 rust(
                     """
                     async fn test_http_version_list_defaults() {
@@ -177,7 +175,7 @@ internal class HttpVersionListGeneratorTest {
         ) { clientCodegenContext, rustCrate ->
             val moduleName = clientCodegenContext.moduleUseName()
             rustCrate.integrationTest("validate_eventstream_http") {
-                TokioTest.render(this)
+                Attribute.TokioTest.render(this)
                 rust(
                     """
                     async fn test_http_version_list_defaults() {
@@ -198,10 +196,10 @@ internal class HttpVersionListGeneratorTest {
     }
 }
 
-class FakeSigningDecorator : RustCodegenDecorator<ClientProtocolGenerator, ClientCodegenContext> {
+class FakeSigningDecorator : ClientCodegenDecorator {
     override val name: String = "fakesigning"
     override val order: Byte = 0
-    override fun supportsCodegenContext(clazz: Class<out CodegenContext>): Boolean = false
+    override fun classpathDiscoverable(): Boolean = false
     override fun configCustomizations(
         codegenContext: ClientCodegenContext,
         baseCustomizations: List<ConfigCustomization>,

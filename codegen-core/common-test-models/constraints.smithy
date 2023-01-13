@@ -427,6 +427,11 @@ structure ConA {
     maxLengthString: MaxLengthString,
     fixedLengthString: FixedLengthString,
 
+    lengthBlob: LengthBlob,
+    minLengthBlob: MinLengthBlob,
+    maxLengthBlob: MaxLengthBlob,
+    fixedLengthBlob: FixedLengthBlob,
+
     rangeInteger: RangeInteger,
     minRangeInteger: MinRangeInteger,
     maxRangeInteger: MaxRangeInteger,
@@ -465,6 +470,12 @@ structure ConA {
     listOfLengthString: ListOfLengthString,
     setOfLengthString: SetOfLengthString,
     mapOfLengthString: MapOfLengthString,
+
+    listOfLengthBlob: ListOfLengthBlob,
+    // TODO(https://github.com/awslabs/smithy-rs/issues/1401): a `set` shape is
+    //  just a `list` shape with `uniqueItems`, which hasn't been implemented yet.
+    // setOfLengthBlob: SetOfLengthBlob,
+    mapOfLengthBlob: MapOfLengthBlob,
 
     listOfRangeInteger: ListOfRangeInteger,
     setOfRangeInteger: SetOfRangeInteger,
@@ -512,6 +523,11 @@ map SparseMap {
 @uniqueItems
 list UniqueItemsList {
     member: String
+}
+
+map MapOfLengthBlob {
+    key: String,
+    value: LengthBlob,
 }
 
 map MapOfLengthString {
@@ -611,6 +627,23 @@ string MaxLengthString
 @length(min: 69, max: 69)
 string FixedLengthString
 
+@length(min: 2, max: 8)
+list LengthListOfLengthBlob {
+    member: LengthBlob
+}
+
+@length(min: 2, max: 70)
+blob LengthBlob
+
+@length(min: 2)
+blob MinLengthBlob
+
+@length(max: 70)
+blob MaxLengthBlob
+
+@length(min: 70, max: 70)
+blob FixedLengthBlob
+
 @pattern("[a-d]{5}")
 string PatternString
 
@@ -701,6 +734,10 @@ set SetOfLengthString {
     member: LengthString
 }
 
+set SetOfLengthBlob {
+    member: LengthBlob
+}
+
 set SetOfPatternString {
     member: PatternString
 }
@@ -720,6 +757,10 @@ list ListOfLengthString {
 
 set SetOfRangeInteger {
     member: RangeInteger
+}
+
+list ListOfLengthBlob {
+    member: LengthBlob
 }
 
 list ListOfRangeInteger {

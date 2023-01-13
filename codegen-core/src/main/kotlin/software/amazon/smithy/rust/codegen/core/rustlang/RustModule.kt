@@ -5,6 +5,8 @@
 
 package software.amazon.smithy.rust.codegen.core.rustlang
 
+import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
+
 /**
  * RustModule system.
  *
@@ -54,10 +56,11 @@ sealed class RustModule {
             documentation: String? = null,
             inline: Boolean = false,
             parent: RustModule = LibRs,
+            additionalAttributes: List<Attribute> = listOf(),
         ): LeafModule {
             return LeafModule(
                 RustReservedWords.escapeIfNeeded(name),
-                RustMetadata(visibility = visibility),
+                RustMetadata(visibility = visibility, additionalAttributes = additionalAttributes),
                 documentation,
                 inline = inline,
                 parent = parent,
@@ -137,4 +140,7 @@ sealed class RustModule {
             else -> {}
         }
     }
+
+    /** Converts this [RustModule] into a [RuntimeType] */
+    fun toType(): RuntimeType = RuntimeType(fullyQualifiedPath())
 }

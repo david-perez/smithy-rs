@@ -99,14 +99,14 @@ fun containerDefaultMetadata(
         shape.members().any { it.getMemberTrait(model, SensitiveTrait::class.java).isPresent }
 
     val setOfDerives = if (isSensitive) {
-        defaultDerives.toSet() - RuntimeType.Debug
+        defaultDerives - RuntimeType.Debug
     } else {
-        defaultDerives.toSet()
+        defaultDerives
     }
     return RustMetadata(
-        Attribute.Derives(setOfDerives),
-        additionalAttributes = additionalAttributes,
-        visibility = Visibility.PUBLIC,
+        setOfDerives,
+        additionalAttributes,
+        Visibility.PUBLIC,
     )
 }
 
@@ -121,6 +121,7 @@ class BaseSymbolMetadataProvider(
     private val model: Model,
     private val additionalAttributes: List<Attribute>,
 ) : SymbolMetadataProvider(base) {
+
     override fun memberMeta(memberShape: MemberShape): RustMetadata =
         when (val container = model.expectShape(memberShape.container)) {
             is StructureShape -> {
@@ -157,18 +158,23 @@ class BaseSymbolMetadataProvider(
     // Only the server subproject uses these, so we provide a sane and conservative default implementation here so that
     // the rest of symbol metadata providers can just delegate to it.
     private val defaultRustMetadata = RustMetadata(visibility = Visibility.PRIVATE)
+
     override fun listMeta(listShape: ListShape) = defaultRustMetadata
     override fun mapMeta(mapShape: MapShape) = defaultRustMetadata
     override fun stringMeta(stringShape: StringShape) = defaultRustMetadata
     override fun numberMeta(numberShape: NumberShape) = defaultRustMetadata
+
+    companion object {
+        private val defaultDerives by lazy {
+            setOf(RuntimeType.Debug, RuntimeType.PartialEq, RuntimeType.Clone)
+        }
+    }
 }
 
-private const val MetaKey = "meta"
-fun Symbol.Builder.meta(rustMetadata: RustMetadata?): Symbol.Builder {
-    return this.putProperty(MetaKey, rustMetadata)
-}
+private const val META_KEY = "meta"
+fun Symbol.Builder.meta(rustMetadata: RustMetadata?): Symbol.Builder = this.putProperty(META_KEY, rustMetadata)
 
-fun Symbol.expectRustMetadata(): RustMetadata = this.getProperty(MetaKey, RustMetadata::class.java).orElseThrow {
+fun Symbol.expectRustMetadata(): RustMetadata = this.getProperty(META_KEY, RustMetadata::class.java).orElseThrow {
     CodegenException(
         "Expected `$this` to have metadata attached but it did not.",
     )

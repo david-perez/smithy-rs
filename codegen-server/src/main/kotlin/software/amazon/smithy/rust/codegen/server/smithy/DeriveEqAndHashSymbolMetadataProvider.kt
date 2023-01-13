@@ -16,6 +16,7 @@ import software.amazon.smithy.model.shapes.StructureShape
 import software.amazon.smithy.model.shapes.UnionShape
 import software.amazon.smithy.model.traits.StreamingTrait
 import software.amazon.smithy.rust.codegen.core.rustlang.RustMetadata
+import software.amazon.smithy.rust.codegen.core.smithy.DirectedWalker
 import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
 import software.amazon.smithy.rust.codegen.core.smithy.RustSymbolProvider
 import software.amazon.smithy.rust.codegen.core.smithy.SymbolMetadataProvider
@@ -28,19 +29,19 @@ class DeriveEqAndHashSymbolMetadataProvider(
     private val base: RustSymbolProvider,
     val model: Model,
 ) : SymbolMetadataProvider(base) {
-    // TODO Use DirectedWalker
-    private val walker = Walker(model)
+    private val walker = DirectedWalker(model)
 
     private fun addDeriveEqAndHashIfPossible(shape: Shape): RustMetadata {
         check(shape !is MemberShape)
         val baseMetadata = base.toSymbol(shape).expectRustMetadata()
-        return if (walker.walkShapes(shape) { rel -> rel.direction == RelationshipDirection.DIRECTED }
+        // TODO Justify
+        return if (walker.walkShapes(shape)
             .any { it is FloatShape || it is DoubleShape || it is DocumentShape || it.hasTrait<StreamingTrait>() }
         ) {
             baseMetadata
         } else {
             var ret = baseMetadata
-            if (ret.derives.derives.contains(RuntimeType.PartialEq)) {
+            if (ret.derives.contains(RuntimeType.PartialEq)) {
                 // We can only derive `Eq` if the type implements `PartialEq`. Not every shape that does not reach a
                 // floating point or a document shape does; for example, streaming shapes cannot be `PartialEq`, see
                 // [StreamingShapeMetadataProvider].
