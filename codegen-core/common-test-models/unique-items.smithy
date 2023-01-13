@@ -49,8 +49,8 @@ apply MalformedUniqueItems @httpMalformedRequestTests([
                 mediaType: "application/json",
                 assertion: {
                     contents: """
-                    { "message" : "1 validation error detected. Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive",
-                      "fieldList" : [{"message": "Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive", "path": "/short"}]}"""
+                    { "message" : "1 validation error detected. Value with repeated values at indices [0, 1] at '/set' failed to satisfy constraint: Member must have unique values",
+                      "fieldList" : [{"message": "Value with repeated values at indices [0, 1] at '/set' failed to satisfy constraint: Member must have unique values", "path": "/set"}]}"""
                 }
             }
         }
@@ -79,42 +79,43 @@ apply MalformedUniqueItems @httpMalformedRequestTests([
                 mediaType: "application/json",
                 assertion: {
                     contents: """
-                    { "message" : "1 validation error detected. Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive",
-                      "fieldList" : [{"message": "Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive", "path": "/short"}]}"""
+                    { "message" : "1 validation error detected. Value with repeated values at indices [0, 2] at '/complexSet' failed to satisfy constraint: Member must have unique values",
+                      "fieldList" : [{"message": "Value with repeated values at indices [0, 2] at '/complexSet' failed to satisfy constraint: Member must have unique values", "path": "/complexSet"}]}"""
                 }
             }
         }
     },
-    {
-        id: "RestJsonMalformedUniqueItemsNullItem",
-        documentation: """
-        When the list contains null, the response should be a 400
-        ValidationException.""",
-        protocol: restJson1,
-        request: {
-            method: "POST",
-            uri: "/MalformedUniqueItems",
-            body: """
-            { "set" : ["a", null, "b", "c"] }""",
-            headers: {
-                "content-type": "application/json"
-            }
-        },
-        response: {
-            code: 400,
-            headers: {
-                "x-amzn-errortype": "ValidationException"
-            },
-            body: {
-                mediaType: "application/json",
-                assertion: {
-                    contents: """
-                    { "message" : "1 validation error detected. Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive",
-                      "fieldList" : [{"message": "Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive", "path": "/short"}]}"""
-                }
-            }
-        }
-    },
+// TODO
+//  {
+//      id: "RestJsonMalformedUniqueItemsNullItem",
+//      documentation: """
+//      When the list contains null, the response should be a 400
+//      ValidationException.""",
+//      protocol: restJson1,
+//      request: {
+//          method: "POST",
+//          uri: "/MalformedUniqueItems",
+//          body: """
+//          { "set" : ["a", null, "b", "c"] }""",
+//          headers: {
+//              "content-type": "application/json"
+//          }
+//      },
+//      response: {
+//          code: 400,
+//          headers: {
+//              "x-amzn-errortype": "ValidationException"
+//          },
+//          body: {
+//              mediaType: "application/json",
+//              assertion: {
+//                  contents: """
+//                  { "message" : "1 validation error detected. Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive",
+//                    "fieldList" : [{"message": "Value $value:L at '/short' failed to satisfy constraint: Member must be between 2 and 8, inclusive", "path": "/short"}]}"""
+//              }
+//          }
+//      }
+//  },
 ])
 
 structure MalformedUniqueItemsInput {

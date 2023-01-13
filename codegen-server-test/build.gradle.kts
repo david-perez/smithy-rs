@@ -50,7 +50,11 @@ val allCodegenTests = "../codegen-core/common-test-models".let { commonModels ->
             imports = listOf("$commonModels/constraints.smithy"),
             extraConfig = """, "codegen": { "publicConstrainedTypes": false } """,
         ),
-        CodegenTest("com.amazonaws.constraints#UniqueItemsService", "unique_items", imports = listOf("$commonModels/unique-items.smithy")),
+        CodegenTest(
+            "com.amazonaws.constraints#UniqueItemsService",
+            "unique_items",
+            imports = listOf("$commonModels/unique-items.smithy"),
+        ),
         CodegenTest(
             "com.amazonaws.constraints#ConstraintsService",
             "constraints",
@@ -68,11 +72,13 @@ val allCodegenTests = "../codegen-core/common-test-models".let { commonModels ->
             imports = listOf("$commonModels/rest-json-extras.smithy"),
         ),
         CodegenTest(
-            "aws.protocoltests.restjson.validation#RestJsonValidation", "rest_json_validation",
+            "aws.protocoltests.restjson.validation#RestJsonValidation",
+            "rest_json_validation",
             extraConfig = """, "codegen": { "ignoreUnsupportedConstraints": true } """,
         ),
         CodegenTest(
-            "aws.protocoltests.extras.restjson.validation#MalformedRangeValidation", "malformed_range_extras",
+            "aws.protocoltests.extras.restjson.validation#MalformedRangeValidation",
+            "malformed_range_extras",
             extraConfig = """, "codegen": { "ignoreUnsupportedConstraints": true } """,
             imports = listOf("$commonModels/malformed-range-extras.smithy"),
         ),

@@ -10,4 +10,5 @@ import software.amazon.smithy.model.traits.UniqueItemsTrait
 // TODO Using the `Debug` representation for the duplicate items for now; adjust according to what smithy-typescript
 //  prints.
 fun UniqueItemsTrait.validationErrorMessage() =
-    "Value with repeated values {:?} at '{}' failed to satisfy constraint: Member must have unique values"
+    // We're using the `Debug` representation of `Vec<usize>` here e.g. `[0, 2, 3]`.
+    "Value with repeated values at indices {:?} at '{}' failed to satisfy constraint: Member must have unique values"

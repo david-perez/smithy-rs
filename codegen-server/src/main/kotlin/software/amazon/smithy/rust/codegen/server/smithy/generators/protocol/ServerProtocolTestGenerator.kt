@@ -486,6 +486,7 @@ class ServerProtocolTestGenerator(
     ) {
         val (_, outputT) = operationInputOutputTypes[operationShape]!!
 
+        // TODO Panic message could help by including what was parsed.
         val panicMessage = "request should have been rejected, but it was accepted"
         rust("// Use the `OperationRegistryBuilder`")
         rustBlock("") {

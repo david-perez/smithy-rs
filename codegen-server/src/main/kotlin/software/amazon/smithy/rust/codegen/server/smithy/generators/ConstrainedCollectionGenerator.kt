@@ -190,6 +190,7 @@ internal sealed class CollectionTraitInfo {
                 constraintViolationVariant = {
                     docs("Constraint violation error when the list does not contain unique items")
                     // TODO Rationale.
+                    // TODO Rename to `duplicate_indices`.
                     rustTemplate(
                         """
                         UniqueItems {
@@ -209,12 +210,47 @@ internal sealed class CollectionTraitInfo {
                     )
                 },
                 asValidationExceptionField = {
+                    // smithy-typescript echoes back one instance of each repeated element after sorting them [0]:
+                    //
+                    // I think we shouldn't do this for several reasons:
+                    //
+                    // 1. In Rust we can't sort the elements to provide a stable message because they may not be `Ord`.
+                    // 2. If we return the elements' serialized representation, we'd have to generate serializers
+                    //    for all shapes in the closure of `@uniqueItems` lists just for this use case. These are
+                    //    typically shapes for which we only generate deserializers.
+                    // 3. Getting back one instance of each repeated element is not helpful:
+                    //        - The elements may be big (complex structures); smithy-typescript truncates them [1]. The
+                    //          caller might thus may not even get to see the repeated elements.
+                    //        - The caller does not know how many times each duplicate element occurred.
+                    //        - The caller does not know in which positions each duplicate element occurred.
+                    //
+                    // I think a better error message is to just return the indices of the duplicate elements: so, the
+                    // list:
+                    //
+                    //     ["a", "b", "a", "b", "c"]
+                    //
+                    // Would return:
+                    //
+                    //     [0, 1, 2, 3]
+                    //
+                    // An even better representation would be to return _groups_ of indices (with size >= 2), one per
+                    // equivalence class:
+                    //
+                    //     [[0, 2], [1, 3]]
+                    //
+                    // However, this latter representation comes at a non-negligible (?) performance cost, namely, the
+                    // allocation of one vector per equivalence class. Judging by how many clients are really interested
+                    // in parsing these (none?), perhaps it's sufficient to just return the "flattened" indices.
+                    //
+                    // [0]: https://github.com/awslabs/smithy-typescript/blob/517c85f8baccf0e5334b4e66d8786bdb5791c595/smithy-typescript-ssdk-libs/server-common/src/validation/validators.ts#L310
+                    // [1]: https://github.com/awslabs/smithy-typescript/blob/517c85f8baccf0e5334b4e66d8786bdb5791c595/smithy-typescript-ssdk-libs/server-common/src/validation/index.ts#L106-L111
                     rust(
                         """
-                        Self::UniqueItems { duplicates, .. } => crate::model::ValidationExceptionField {
-                            message: format!("${uniqueItemsTrait.validationErrorMessage()}", &duplicates, &path),
-                            path,
-                        },
+                        Self::UniqueItems { duplicates, .. } => 
+                            crate::model::ValidationExceptionField {
+                                message: format!("${uniqueItemsTrait.validationErrorMessage()}", &duplicates, &path),
+                                path,
+                            },
                         """,
                     )
                 },
@@ -222,22 +258,26 @@ internal sealed class CollectionTraitInfo {
                     {
                         // TODO Explain why we can use `HashMap`.
                         // TODO Unit tests.
-                        // TODO Commented out code is wrong; fix it so we get the full list of duplicates once we have
-                        //  tests
+                        // TODO Explain we could easily get groups.
+                        // TODO Document algorithm, extra Vec, and complexity.
                         rustTemplate(
                             """
                             fn check_unique_items(items: #{Vec}<#{MemberSymbol}>) -> Result<#{Vec}<#{MemberSymbol}>, #{ConstraintViolation}> {
                                 let mut seen = #{HashMap}::new();
                                 let mut duplicates = #{Vec}::new();
-                                for (idx, item) in items.iter().enumerate() {
-                                    if let Some(prev_idx) = seen.insert(item, idx) {
+                                for idx in 0..items.len() {
+                                    if let Some(prev_idx) = seen.insert(&items[idx], idx) {
                                         duplicates.push(prev_idx);
                                     }
                                 }
 
-                                // for last_idx in seen.into_values() {
-                                //     duplicates.push(last_idx);
-                                // }
+                                let mut last_duplicates = #{Vec}::new();
+                                for idx in &duplicates {
+                                    if let Some(prev_idx) = seen.remove(&items[*idx]) {
+                                        last_duplicates.push(prev_idx);
+                                    }
+                                }
+                                duplicates.extend(last_duplicates);
 
                                 if !duplicates.is_empty() {
                                     debug_assert!(duplicates.len() >= 2);
