@@ -27,7 +27,7 @@ import software.amazon.smithy.rust.codegen.core.util.hasTrait
 class DeriveEqAndHashSymbolMetadataProvider(
     private val base: RustSymbolProvider,
     val model: Model,
-): SymbolMetadataProvider(base) {
+) : SymbolMetadataProvider(base) {
     // TODO Use DirectedWalker
     private val walker = Walker(model)
 
@@ -35,16 +35,16 @@ class DeriveEqAndHashSymbolMetadataProvider(
         check(shape !is MemberShape)
         val baseMetadata = base.toSymbol(shape).expectRustMetadata()
         return if (walker.walkShapes(shape) { rel -> rel.direction == RelationshipDirection.DIRECTED }
-                .any { it is FloatShape || it is DoubleShape || it is DocumentShape || it.hasTrait<StreamingTrait>() }
+            .any { it is FloatShape || it is DoubleShape || it is DocumentShape || it.hasTrait<StreamingTrait>() }
         ) {
             baseMetadata
         } else {
             var ret = baseMetadata
             if (ret.derives.derives.contains(RuntimeType.PartialEq)) {
-               // We can only derive `Eq` if the type implements `PartialEq`. Not every shape that does not reach a
-               // floating point or a document shape does; for example, streaming shapes cannot be `PartialEq`, see
-               // [StreamingShapeMetadataProvider].
-               ret = ret.withDerives(RuntimeType.Eq)
+                // We can only derive `Eq` if the type implements `PartialEq`. Not every shape that does not reach a
+                // floating point or a document shape does; for example, streaming shapes cannot be `PartialEq`, see
+                // [StreamingShapeMetadataProvider].
+                ret = ret.withDerives(RuntimeType.Eq)
             }
 
             // `std::collections::HashMap` does not implement `std::hash::Hash`:

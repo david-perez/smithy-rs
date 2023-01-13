@@ -154,7 +154,6 @@ class BaseSymbolMetadataProvider(
             RuntimeType.Hash,
         )
 
-
     // Only the server subproject uses these, so we provide a sane and conservative default implementation here so that
     // the rest of symbol metadata providers can just delegate to it.
     private val defaultRustMetadata = RustMetadata(visibility = Visibility.PRIVATE)

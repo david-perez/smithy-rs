@@ -58,7 +58,7 @@ val supportedStringConstraintTraits = setOf(LengthTrait::class.java, PatternTrai
  */
 val supportedCollectionConstraintTraits = setOf(
     LengthTrait::class.java,
-    UniqueItemsTrait::class.java
+    UniqueItemsTrait::class.java,
 )
 
 /**
