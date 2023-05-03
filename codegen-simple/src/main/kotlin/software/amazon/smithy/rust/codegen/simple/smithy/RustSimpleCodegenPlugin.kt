@@ -13,9 +13,11 @@ import software.amazon.smithy.rust.codegen.core.rustlang.Writable
 import software.amazon.smithy.rust.codegen.core.rustlang.docs
 import software.amazon.smithy.rust.codegen.core.rustlang.escape
 import software.amazon.smithy.rust.codegen.core.rustlang.rust
+import software.amazon.smithy.rust.codegen.core.rustlang.rustTemplate
 import software.amazon.smithy.rust.codegen.core.rustlang.writable
 import software.amazon.smithy.rust.codegen.core.smithy.CoreRustSettings
 import software.amazon.smithy.rust.codegen.core.smithy.ModuleDocProvider
+import software.amazon.smithy.rust.codegen.core.smithy.RuntimeType
 import software.amazon.smithy.rust.codegen.core.smithy.RustCrate
 import software.amazon.smithy.rust.codegen.core.util.CommandFailed
 import software.amazon.smithy.rust.codegen.core.util.runCommand
@@ -83,6 +85,16 @@ class RustSimpleCodegenPlugin : SmithyBuildPlugin {
                     println!("This model contains the following structure shapes: $structureList");
                 }
                 """
+            )
+
+            rustTemplate(
+                """
+                /// A function that takes in an `regex::Regex`.
+                pub fn process_regex(_req: #{regex}::Regex) {
+                    todo!()
+                }
+                """,
+                "regex" to RuntimeType.Regex,
             )
         }
 
